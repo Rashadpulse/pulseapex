@@ -29,9 +29,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   
   // Real-time API config
-  const [backendUrl, setBackendUrl] = useState("http://localhost:8000/api/v1");
-  const [wsUrl, setWsUrl] = useState("ws://localhost:8000/ws");
-  const [connectionMode, setConnectionMode] = useState<"mock" | "live">("mock");
+  const [backendUrl, setBackendUrl] = useState(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1");
+  const [wsUrl, setWsUrl] = useState(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws");
+  const [connectionMode, setConnectionMode] = useState<"mock" | "live">("live");
   const [wsConnected, setWsConnected] = useState(false);
 
   // File Upload states

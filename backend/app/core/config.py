@@ -1,5 +1,6 @@
-import os
-from typing import List, Optional
+import json
+from typing import List, Optional, Union
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -13,9 +14,20 @@ class Settings(BaseSettings):
     
     # CORS Origins (Frontend connection permissions)
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            if isinstance(v, str):
+                v = json.loads(v)
+            return v
+        raise ValueError(v)
     
     # AI Providers (OpenAI, Gemini, or Mock)
-    AI_PROVIDER: str = "mock"  # Can be "openai", "gemini", or "mock"
+    AI_PROVIDER: str = "gemini"  # Can be "openai", "gemini", or "mock"
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     
