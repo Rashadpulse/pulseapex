@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:Rashad786%40nasr@db.uqkrxjeltiwsquqtloui.supabase.co:5432/postgres
+      - SECRET_KEY=super-secret-pulseapex-ai-cryptographic-security-key-change-in-production
+      - AI_PROVIDER=gemini
+      - GEMINI_API_KEY=AQ.Ab8RN6JosKMaTtiCcH0xdqL7S-AfTysZj9ShH2SWEhWD-OxvVw
+      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - ./backend:/app
+      - backend_storage:/app/storage
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  backend_storage:
