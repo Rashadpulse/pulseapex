@@ -44,7 +44,7 @@ app.include_router(documents.router, prefix=f"{settings.API_V1_STR}/documents", 
 app.include_router(audits.router, prefix=f"{settings.API_V1_STR}/audits", tags=["Audit Workspace"])
 app.include_router(hitl.router, prefix=f"{settings.API_V1_STR}/hitl", tags=["Human-in-the-Loop"])
 app.include_router(compliance.router, prefix=f"{settings.API_V1_STR}/compliance", tags=["Compliance Policies"])
-app.include_router(ws_router.router, tags=["WebSockets"])
+app.include_router(ws_router, tags=["WebSockets"])
 
 @app.get("/")
 def read_root():
