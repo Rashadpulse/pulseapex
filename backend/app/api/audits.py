@@ -95,6 +95,26 @@ async def get_audit_status(
         raise HTTPException(status_code=404, detail="Audit job not found")
     return audit
 
+@router.get("/document/{document_id}", response_model=AuditResponse)
+async def get_latest_audit_by_document(
+    document_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    result = await db.execute(
+        select(Audit)
+        .options(selectinload(Audit.findings))
+        .where(
+            Audit.document_id == document_id,
+            Audit.organization_id == current_user.organization_id
+        )
+        .order_by(Audit.created_at.desc())
+    )
+    audit = result.scalars().first()
+    if not audit:
+        raise HTTPException(status_code=404, detail="No audits found for this document")
+    return audit
+
 @router.get("/stats", response_model=DashboardStats)
 async def get_dashboard_stats(
     db: AsyncSession = Depends(get_db),

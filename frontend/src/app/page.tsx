@@ -222,6 +222,27 @@ export default function Home() {
     }
   };
 
+  const fetchAuditForDoc = async (docId: number) => {
+    if (connectionMode === "mock") return;
+    try {
+      const res = await fetch(`${backendUrl}/audits/document/${docId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const auditData = await res.json();
+        setAudit(docId, auditData);
+      }
+    } catch (e) {
+      console.error("Failed to fetch audit for document", e);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDocId && token && connectionMode === "live") {
+      fetchAuditForDoc(selectedDocId);
+    }
+  }, [selectedDocId, token, connectionMode]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1020,21 +1041,37 @@ export default function Home() {
           {activeTab === "workspace" && (
             <div className="space-y-6">
               {/* Document selection helper */}
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 border-b border-gray-950">
-                {documents.map((d) => (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-950">
+                <div className="flex items-center gap-3 overflow-x-auto">
+                  {documents.map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => setSelectedDocId(d.id)}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold border flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+                        selectedDocId === d.id 
+                          ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/40' 
+                          : 'bg-transparent text-gray-500 border-gray-900 hover:text-gray-300'
+                      }`}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>{d.filename}</span>
+                    </button>
+                  ))}
+                </div>
+                {documents.length > 0 && (
                   <button
-                    key={d.id}
-                    onClick={() => setSelectedDocId(d.id)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold border flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
-                      selectedDocId === d.id 
-                        ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/40' 
-                        : 'bg-transparent text-gray-500 border-gray-900 hover:text-gray-300'
-                    }`}
+                    onClick={() => {
+                      fetchDocuments();
+                      if (selectedDocId) {
+                        fetchAuditForDoc(selectedDocId);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-gray-950 border border-gray-900 hover:border-gray-800 text-gray-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>{d.filename}</span>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Sync Findings</span>
                   </button>
-                ))}
+                )}
               </div>
 
               {!selectedDoc ? (
