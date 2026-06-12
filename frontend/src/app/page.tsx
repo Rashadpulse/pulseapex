@@ -13,7 +13,7 @@ import {
 
 export default function Home() {
   const {
-    token, setToken, user, setUser, documents, setDocuments, 
+    token, setToken, user, setUser, documents, setDocuments, addDocument,
     audits, setAudit, agentLogs, addAgentLog, clearAgentLogs, 
     activeTab, setActiveTab, selectedDocId, setSelectedDocId, 
     pendingApprovals, setPendingApprovals, logout
