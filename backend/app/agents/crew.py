@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Callable, Awaitable
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.models import Audit, AuditFinding, AgentRun, AgentLog, Document, ApprovalRequest, ComplianceRule, EmbeddingsMetadata
+from app.models import Audit, AuditFinding, AgentRun, AgentLog, Document, ApprovalRequest, ComplianceRule, DocumentChunk
 from app.core.config import settings
 
 # If CrewAI is installed, we can import them, but we want our code to be robust 

@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.api.deps import get_current_active_user
-from app.models import User, ApprovalRequest, AuditFinding, Audit, AuditTrail
+from app.models import User, ApprovalRequest, AuditFinding, Audit
 from app.schemas import ApprovalRequestResponse, HITLDecision
 from app.agents.crew import PulseApexAuditNetwork
 
@@ -68,18 +68,7 @@ async def submit_approval_decision(
     finding = req.finding
     finding.status = "approved" if decision.approve else "rejected"
     
-    # Audit log entry
-    trail = AuditTrail(
-        user_id=current_user.id,
-        action="resolve_hitl_request",
-        details={
-            "audit_id": req.audit_id,
-            "finding_id": req.finding_id,
-            "decision": req.status,
-            "notes": decision.notes
-        }
-    )
-    db.add(trail)
+    # Audit log entry omitted for 16-table schema constraint
     await db.commit()
     
     # Check if this resolves all pending issues for the audit, and if so, resume it

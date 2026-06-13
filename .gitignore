@@ -1,0 +1,23 @@
+﻿# Environments
+venv/
+env/
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Large Files & Data
+*.db
+*.sqlite3
+*.log
+node_modules/
+dist/
+build/
