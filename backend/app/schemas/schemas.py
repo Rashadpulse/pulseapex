@@ -36,6 +36,7 @@ class DocumentResponse(BaseModel):
     id: int
     filename: str
     file_type: str
+    file_size: int
     status: str
     organization_id: int
     created_at: datetime

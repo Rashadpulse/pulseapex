@@ -55,6 +55,7 @@ async def upload_document(
     db_doc = Document(
         filename=os.path.basename(file_path),
         file_type=ext.replace(".", "").upper(),
+        file_size=file_size,
         storage_path=file_path,
         status="uploaded",
         organization_id=current_user.organization_id

@@ -86,6 +86,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String(255), nullable=False)
     file_type = Column(String(50), nullable=False)
+    file_size = Column(Integer, nullable=False)
     storage_path = Column(String(555), nullable=False)
     status = Column(String(50), default="uploaded")
     organization_id = Column(Integer, ForeignKey("organizations.id"))
