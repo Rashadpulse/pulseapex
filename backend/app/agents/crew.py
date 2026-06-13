@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Callable, Awaitable
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.models import Audit, AuditFinding, AgentRun, AgentLog, Document, ApprovalRequest, ComplianceRule, DocumentChunk
+from app.models import Audit, AuditFinding, AgentRun, AgentLog, Document, ApprovalRequest, ComplianceRule, DocumentChunk, AgentOrchestration
 from app.core.config import settings
 
 # If CrewAI is installed, we can import them, but we want our code to be robust 
@@ -54,12 +54,17 @@ class PulseApexAuditNetwork:
         Executes a highly detailed simulation of the 5-agent auditing process.
         Perfect for local runs, free tiers, and testing workflows.
         """
-        # 1. Create agent runs in DB
+        # 1. Create agent orchestration and runs in DB
         agents = ["Parser Agent", "Compliance Auditor", "Patch Specialist", "Verification Agent", "Executive Summarizer"]
         run_ids = {}
         
+        orch = AgentOrchestration(audit_id=self.audit_id, session_config={"mode": "simulation"})
+        self.db.add(orch)
+        await self.db.commit()
+        await self.db.refresh(orch)
+        
         for agent in agents:
-            run = AgentRun(audit_id=self.audit_id, agent_name=agent, status="started")
+            run = AgentRun(orchestration_id=orch.id, agent_name=agent, status="started")
             self.db.add(run)
             await self.db.commit()
             await self.db.refresh(run)
@@ -249,7 +254,6 @@ class PulseApexAuditNetwork:
         result = await self.db.execute(select(Audit).where(Audit.id == self.audit_id))
         audit_obj = result.scalars().first()
         audit_obj.compliance_score = compliance_score
-        audit_obj.critical_findings_count = critical_count
         
         if hitl_triggered:
             audit_obj.status = "paused"
@@ -392,7 +396,10 @@ class PulseApexAuditNetwork:
         await self.db.commit()
         
         # Trigger Executive Summary agent run
-        run = AgentRun(audit_id=self.audit_id, agent_name="Executive Summarizer", status="started")
+        result = await self.db.execute(select(AgentOrchestration).where(AgentOrchestration.audit_id == self.audit_id))
+        orch = result.scalars().first()
+        
+        run = AgentRun(orchestration_id=orch.id, agent_name="Executive Summarizer", status="started")
         self.db.add(run)
         await self.db.commit()
         await self.db.refresh(run)
