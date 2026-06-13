@@ -239,9 +239,12 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedDocId && token && connectionMode === "live") {
-      fetchAuditForDoc(selectedDocId);
+      const doc = documents.find(d => d.id === selectedDocId);
+      if (doc && doc.status !== "uploaded") {
+        fetchAuditForDoc(selectedDocId);
+      }
     }
-  }, [selectedDocId, token, connectionMode]);
+  }, [selectedDocId, token, connectionMode, documents]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,13 +349,15 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${backendUrl}/audits/start/${docId}`, {
+      const res = await fetch(`${backendUrl}/audits/trigger/${docId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        const auditData = await res.json();
-        setAudit(docId, auditData);
+        // API returns {"status": "processing"}
+        // Locally update document state so dashboard shows parsing
+        setDocuments(documents.map(d => d.id === docId ? { ...d, status: "parsing" } : d));
+        
         // Switch tab to Agent Terminal to watch logs stream
         clearAgentLogs();
         setActiveTab("agent-terminal");

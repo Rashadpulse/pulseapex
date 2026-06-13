@@ -26,8 +26,8 @@ async def run_crew_task(audit_id: int, doc_id: int, db_session: AsyncSession):
     network = PulseApexAuditNetwork(audit_id, db_session)
     await network.execute_real_crewai(doc)
 
-@router.post("/start/{document_id}", response_model=AuditResponse)
-async def start_audit(
+@router.post("/trigger/{document_id}", status_code=202)
+async def trigger_audit(
     document_id: int,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
@@ -73,7 +73,7 @@ async def start_audit(
     # Run in background to prevent request timeouts
     background_tasks.add_task(run_crew_task, db_audit.id, document_id, db)
     
-    return db_audit
+    return {"status": "processing", "message": "CrewAI agents activated"}
 
 @router.get("/status/{audit_id}", response_model=AuditResponse)
 async def get_audit_status(
