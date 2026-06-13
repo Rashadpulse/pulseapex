@@ -54,3 +54,32 @@ def read_root():
         "service": settings.PROJECT_NAME,
         "message": "PulseApex Audit Network Backend is operational."
     }
+
+@app.get("/debug-db")
+async def debug_db():
+    from app.core.database import engine
+    from sqlalchemy import text
+    import traceback
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1;"))
+            val = result.scalar()
+            
+            # Check tables
+            tables_res = await conn.execute(text(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
+            ))
+            tables = [row[0] for row in tables_res.fetchall()]
+            
+            return {
+                "status": "connected",
+                "select_1": val,
+                "tables": tables
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_type": str(type(e)),
+            "error_message": str(e),
+            "traceback": traceback.format_exc()
+        }
