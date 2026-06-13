@@ -60,8 +60,7 @@ async def start_audit(
         document_id=document_id,
         organization_id=current_user.organization_id,
         status="running",
-        compliance_score=100.0,
-        critical_findings_count=0
+        compliance_score=100.0
     )
     db.add(db_audit)
     await db.commit()
@@ -139,7 +138,13 @@ async def get_dashboard_stats(
     if completed_audits:
         avg_compliance = sum(a.compliance_score for a in completed_audits) / len(completed_audits)
         
-    critical_findings_count = sum(a.critical_findings_count for a in audits)
+    findings_result = await db.execute(
+        select(AuditFinding).join(Audit).where(
+            Audit.organization_id == current_user.organization_id, 
+            AuditFinding.severity == "critical"
+        )
+    )
+    critical_findings_count = len(findings_result.scalars().all())
     
     # Health score is a visual calculation based on average compliance score and active findings
     health = max(0.0, avg_compliance - (critical_findings_count * 2))
