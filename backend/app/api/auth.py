@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password, create_access_token
-from app.models import User, Organization, Role
+from app.models import User, Organization, Role, UserRole
 from app.schemas import UserCreate, UserResponse, Token
 from app.api.deps import get_current_active_user
 
@@ -61,10 +61,16 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         is_active=True,
-        role_id=role.id if role else None,
         organization_id=org.id,
     )
     db.add(db_user)
+    await db.flush()
+    
+    # Associate the role through the link table
+    if role:
+        user_role = UserRole(user_id=db_user.id, role_id=role.id)
+        db.add(user_role)
+        
     await db.commit()
     await db.refresh(db_user)
     return db_user
