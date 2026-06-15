@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { 
-  usePulseApexStore, Document, Audit, AuditFinding, AgentLog 
+  usePulseApexStore, Document, Audit 
 } from "../store";
 import { 
   Shield, UploadCloud, Layers, ClipboardCheck, Terminal, BookOpen, 
@@ -233,7 +233,7 @@ export default function Home() {
   const fetchDocuments = async () => {
     if (connectionMode === "mock") return;
     try {
-      let baseDocumentsUrl = `https://pulseapex-api.onrender.com/api/v1/documents`;
+      let baseDocumentsUrl = `${backendUrl}/documents`;
       const res = await fetch(baseDocumentsUrl, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -251,7 +251,7 @@ export default function Home() {
     try {
       let rawDocId = docId;
       const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
-      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/document/${strictId}`, {
+      const res = await fetch(`${backendUrl}/audits/document/${strictId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -374,7 +374,7 @@ export default function Home() {
     try {
       let rawDocId = docId;
       const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
-      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${strictId}`, {
+      const res = await fetch(`${backendUrl}/audits/trigger/${strictId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });

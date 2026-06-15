@@ -6,7 +6,7 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload, joinedload
-from app.core.database import get_db
+from app.core.database import AsyncSessionLocal, get_db
 from app.api.deps import get_current_active_user
 from app.models import User, Document, Audit, AuditFinding, AgentRun
 from app.schemas import AuditResponse, DashboardStats
@@ -14,41 +14,42 @@ from app.agents.crew import PulseApexAuditNetwork
 
 router = APIRouter()
 
-async def run_crew_task(audit_id: int, doc_id: int, db_session: AsyncSession):
+async def run_crew_task(audit_id: int, doc_id: int):
     """Background task: run the CrewAI agent network for a given audit."""
     import logging
     logger = logging.getLogger("uvicorn.error")
     logger.info(f"[CrewAI] Starting background crew task for audit_id={audit_id}, doc_id={doc_id}")
 
     try:
-        # Retrieve document
-        result = await db_session.execute(select(Document).where(Document.id == doc_id))
-        doc = result.scalars().first()
-        if not doc:
-            logger.error(f"[CrewAI] Document {doc_id} not found. Aborting crew task.")
-            return
+        async with AsyncSessionLocal() as db_session:
+            # Retrieve document
+            result = await db_session.execute(select(Document).where(Document.id == doc_id))
+            doc = result.scalars().first()
+            if not doc:
+                logger.error(f"[CrewAI] Document {doc_id} not found. Aborting crew task.")
+                return
 
-        # Create audit network agent run coordinator and execute
-        network = PulseApexAuditNetwork(audit_id, db_session)
-        await network.execute_real_crewai(doc)
+            network = PulseApexAuditNetwork(audit_id, db_session)
+            await network.execute_real_crewai(doc)
         logger.info(f"[CrewAI] Crew task completed successfully for audit_id={audit_id}")
 
     except Exception as e:
         logger.error(f"[CrewAI] FATAL ERROR in background crew task for audit_id={audit_id}: {type(e).__name__}: {e}")
         # Mark audit as failed so the frontend doesn't hang
         try:
-            result = await db_session.execute(select(Audit).where(Audit.id == audit_id))
-            audit_obj = result.scalars().first()
-            if audit_obj and audit_obj.status not in ["completed", "failed"]:
-                audit_obj.status = "failed"
-                await db_session.commit()
-                logger.info(f"[CrewAI] Marked audit_id={audit_id} as 'failed'")
+            async with AsyncSessionLocal() as db_session:
+                result = await db_session.execute(select(Audit).where(Audit.id == audit_id))
+                audit_obj = result.scalars().first()
+                if audit_obj and audit_obj.status not in ["completed", "failed"]:
+                    audit_obj.status = "failed"
+                    await db_session.commit()
+                    logger.info(f"[CrewAI] Marked audit_id={audit_id} as 'failed'")
         except Exception as inner_e:
             logger.error(f"[CrewAI] Could not update audit status: {inner_e}")
 
-@router.post("/start/{document_id:int}", response_model=AuditResponse)
-@router.post("/trigger/{document_id:int}", response_model=AuditResponse)
-@router.get("/trigger/{document_id:int}", response_model=AuditResponse)
+@router.post("/start/{document_id}", response_model=AuditResponse)
+@router.post("/trigger/{document_id}", response_model=AuditResponse)
+@router.get("/trigger/{document_id}", response_model=AuditResponse)
 async def start_audit(
     document_id: int,
     background_tasks: BackgroundTasks,
@@ -94,7 +95,7 @@ async def start_audit(
     await db.commit()
     
     # Run in background to prevent request timeouts
-    background_tasks.add_task(run_crew_task, db_audit.id, document_id, db)
+    background_tasks.add_task(run_crew_task, db_audit.id, document_id)
     
     # Re-fetch with eager loading to prevent MissingGreenlet on serialization
     result = await db.execute(
@@ -124,7 +125,7 @@ async def get_audit_status(
         raise HTTPException(status_code=404, detail="Audit job not found")
     return audit
 
-@router.get("/document/{document_id:int}", response_model=AuditResponse)
+@router.get("/document/{document_id}", response_model=AuditResponse)
 async def get_latest_audit_by_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
