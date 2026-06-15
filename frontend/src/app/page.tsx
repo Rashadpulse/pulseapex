@@ -175,6 +175,7 @@ export default function Home() {
         };
 
         socket.onmessage = (event) => {
+          console.log("RAW WEBSOCKET DATA RECEIVED:", event.data);
           try {
             const data = JSON.parse(event.data);
             if (data.type === "agent_log") {
@@ -231,8 +232,8 @@ export default function Home() {
     if (connectionMode === "mock") return;
     try {
       let rawDocId = docId;
-      let cleanDocId = String(rawDocId).replace(/[^0-9]/g, '');
-      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/document/${cleanDocId}`, {
+      const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
+      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/document/${strictId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -354,8 +355,8 @@ export default function Home() {
 
     try {
       let rawDocId = docId;
-      let cleanDocId = String(rawDocId).replace(/[^0-9]/g, '');
-      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${cleanDocId}`, {
+      const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
+      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${strictId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
