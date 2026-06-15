@@ -19,6 +19,10 @@ export default function Home() {
     pendingApprovals, setPendingApprovals, logout
   } = usePulseApexStore();
 
+  // Hydration fix
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   // Local UI States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -225,7 +229,8 @@ export default function Home() {
   const fetchAuditForDoc = async (docId: number) => {
     if (connectionMode === "mock") return;
     try {
-      const res = await fetch(`${backendUrl}/audits/document/${docId}`, {
+      const cleanDocId = String(docId).split(':')[0];
+      const res = await fetch(`${backendUrl}/audits/document/${cleanDocId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -346,7 +351,8 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${docId}`, {
+      const cleanDocId = String(docId).split(':')[0];
+      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${cleanDocId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -581,6 +587,15 @@ export default function Home() {
   const stats = getStats();
   const selectedDoc = documents.find(d => d.id === selectedDocId);
   const selectedAudit = selectedDocId ? audits[selectedDocId] : null;
+
+  // Hydration guard
+  if (!isMounted) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-screen bg-[#030305]">
+        <div className="p-4 text-slate-500 font-semibold tracking-wider uppercase text-sm">Initializing Terminal Feed...</div>
+      </div>
+    );
+  }
 
   // Render Login/Register view if not logged in
   if (!token) {
