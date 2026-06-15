@@ -26,8 +26,10 @@ async def run_crew_task(audit_id: int, doc_id: int, db_session: AsyncSession):
     network = PulseApexAuditNetwork(audit_id, db_session)
     await network.execute_real_crewai(doc)
 
-@router.post("/trigger/{document_id}", status_code=202)
-async def trigger_audit(
+@router.post("/start/{document_id}", response_model=AuditResponse)
+@router.post("/trigger/{document_id}", response_model=AuditResponse)
+@router.get("/trigger/{document_id}", response_model=AuditResponse)
+async def start_audit(
     document_id: int,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
@@ -60,7 +62,8 @@ async def trigger_audit(
         document_id=document_id,
         organization_id=current_user.organization_id,
         status="running",
-        compliance_score=100.0
+        compliance_score=100.0,
+        critical_findings_count=0
     )
     db.add(db_audit)
     await db.commit()
@@ -73,7 +76,7 @@ async def trigger_audit(
     # Run in background to prevent request timeouts
     background_tasks.add_task(run_crew_task, db_audit.id, document_id, db)
     
-    return {"status": "processing", "message": "CrewAI agents activated"}
+    return db_audit
 
 @router.get("/status/{audit_id}", response_model=AuditResponse)
 async def get_audit_status(
@@ -138,13 +141,7 @@ async def get_dashboard_stats(
     if completed_audits:
         avg_compliance = sum(a.compliance_score for a in completed_audits) / len(completed_audits)
         
-    findings_result = await db.execute(
-        select(AuditFinding).join(Audit).where(
-            Audit.organization_id == current_user.organization_id, 
-            AuditFinding.severity == "critical"
-        )
-    )
-    critical_findings_count = len(findings_result.scalars().all())
+    critical_findings_count = sum(a.critical_findings_count for a in audits)
     
     # Health score is a visual calculation based on average compliance score and active findings
     health = max(0.0, avg_compliance - (critical_findings_count * 2))

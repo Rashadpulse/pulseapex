@@ -16,16 +16,14 @@ async def create_compliance_rule(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    # Save the rule as standard text DB entry
-    rule = ComplianceRule(
+    # Ingest the rule (chunks it, generates mock/real embeddings and saves to DB)
+    rule = await VectorDBService.ingest_rule(
+        db=db,
+        org_id=current_user.organization_id,
         title=rule_in.title,
         category=rule_in.category,
-        rule_text=rule_in.rule_text,
-        organization_id=current_user.organization_id
+        rule_text=rule_in.rule_text
     )
-    db.add(rule)
-    await db.commit()
-    await db.refresh(rule)
     return rule
 
 @router.get("/", response_model=List[ComplianceRuleResponse])

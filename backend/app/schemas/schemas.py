@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     is_active: bool
+    role_id: Optional[int] = None
     organization_id: Optional[int] = None
     created_at: datetime
 
@@ -68,7 +69,7 @@ class AuditResponse(BaseModel):
     organization_id: int
     status: str
     compliance_score: float
-    critical_findings_count: Optional[int] = None
+    critical_findings_count: int
     created_at: datetime
     completed_at: Optional[datetime] = None
     findings: List[AuditFindingResponse] = []
