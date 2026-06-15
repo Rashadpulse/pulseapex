@@ -5,7 +5,7 @@ import csv
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from app.core.database import get_db
 from app.api.deps import get_current_active_user
 from app.models import User, Document, Audit, AuditFinding, AgentRun
@@ -76,6 +76,13 @@ async def start_audit(
     # Run in background to prevent request timeouts
     background_tasks.add_task(run_crew_task, db_audit.id, document_id, db)
     
+    # Re-fetch with eager loading to prevent MissingGreenlet on serialization
+    result = await db.execute(
+        select(Audit)
+        .options(joinedload(Audit.findings))
+        .where(Audit.id == db_audit.id)
+    )
+    db_audit = result.scalars().first()
     return db_audit
 
 @router.get("/status/{audit_id}", response_model=AuditResponse)
