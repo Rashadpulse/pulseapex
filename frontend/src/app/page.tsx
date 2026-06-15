@@ -239,12 +239,9 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedDocId && token && connectionMode === "live") {
-      const doc = documents.find(d => d.id === selectedDocId);
-      if (doc && doc.status !== "uploaded") {
-        fetchAuditForDoc(selectedDocId);
-      }
+      fetchAuditForDoc(selectedDocId);
     }
-  }, [selectedDocId, token, connectionMode, documents]);
+  }, [selectedDocId, token, connectionMode]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,15 +346,13 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${backendUrl}/audits/trigger/${docId}`, {
+      const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${docId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        // API returns {"status": "processing"}
-        // Locally update document state so dashboard shows parsing
-        setDocuments(documents.map(d => d.id === docId ? { ...d, status: "parsing" } : d));
-        
+        const auditData = await res.json();
+        setAudit(docId, auditData);
         // Switch tab to Agent Terminal to watch logs stream
         clearAgentLogs();
         setActiveTab("agent-terminal");
