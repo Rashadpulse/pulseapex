@@ -25,10 +25,7 @@ async def ensure_default_roles(db: AsyncSession):
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Seed roles first
-    await ensure_default_roles(db)
-    
-    # Check if user already exists
+    # Check if user already exists first
     result = await db.execute(select(User).where(User.email == user_in.email))
     user = result.scalars().first()
     if user:
@@ -36,26 +33,38 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
             status_code=400,
             detail="The user with this email already exists in the system",
         )
+
+    # Seed roles first
+    await ensure_default_roles(db)
     
-    # Get or create organization
-    result = await db.execute(
-        select(Organization).where(Organization.name == user_in.organization_name)
-    )
-    org = result.scalars().first()
-    if not org:
-        org = Organization(
-            name=user_in.organization_name,
-            slug=user_in.organization_name.lower().replace(" ", "-")
-        )
-        db.add(org)
-        await db.commit()
-        await db.refresh(org)
-    
-    # Get default auditor role for registration (or admin if first user)
+    # Get default admin/auditor role for registration (or admin if first user)
     result = await db.execute(select(Role).where(Role.name == "admin"))
     role = result.scalars().first()
-    
-    # Create user
+
+    # Atomically get or create organization by slug
+    slug = user_in.organization_name.strip().lower().replace(" ", "-")
+    try:
+        async with db.begin_nested():
+            result = await db.execute(select(Organization).where(Organization.slug == slug))
+            org = result.scalars().first()
+            if not org:
+                org = Organization(
+                    name=user_in.organization_name,
+                    slug=slug
+                )
+                db.add(org)
+                await db.flush() # Populate org.id without committing
+    except Exception:
+        # If nested transaction failed (e.g. concurrent creation), retrieve it
+        result = await db.execute(select(Organization).where(Organization.slug == slug))
+        org = result.scalars().first()
+        if not org:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create or retrieve organization atomic transaction"
+            )
+            
+    # Create user linked to organization in one single commit transaction
     db_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),

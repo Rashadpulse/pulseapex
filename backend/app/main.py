@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine
@@ -9,6 +10,23 @@ from app.websockets import router as ws_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Validate essential configuration variables on startup
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+    missing_vars = []
+    
+    if not settings.DATABASE_URL:
+        missing_vars.append("DATABASE_URL")
+    if not settings.SECRET_KEY:
+        missing_vars.append("SECRET_KEY")
+    if settings.SECRET_KEY == "super-secret-aegis-ai-cryptographic-security-key-change-in-production":
+        logger.warning("Using default or placeholder SECRET_KEY. It is highly recommended to set a custom key in production.")
+        
+    if missing_vars:
+        err_msg = f"CRITICAL Startup Failure: Missing essential environment variables: {', '.join(missing_vars)}"
+        logger.error(err_msg)
+        raise RuntimeError(err_msg)
+
     # Startup: Create tables in Supabase (or SQLite) if they don't exist yet
     async with engine.begin() as conn:
         # Enable pgvector extension on Supabase if it isn't enabled
@@ -32,12 +50,26 @@ app = FastAPI(
 # Set CORS middleware rules
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=[
+        "https://pulseapex1.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ],
     allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:3000|http://127\.0\.0\.1:3000",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Custom global 404 handler for undefined routes
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": "Requested endpoint not found. Please verify the API route prefix (e.g. /api/v1/...) and request path."
+        }
+    )
 
 # Connect Routers
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Authentication"])
