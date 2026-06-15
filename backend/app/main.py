@@ -28,15 +28,20 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(err_msg)
 
     # Startup: Create tables in Supabase (or SQLite) if they don't exist yet
-    async with engine.begin() as conn:
-        # Enable pgvector extension on Supabase if it isn't enabled
-        try:
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-        except Exception:
-            # If the DB doesn't support vector or user lacks privileges, fail silently
-            # pgvector is pre-installed on Supabase so it should succeed.
-            pass
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            # Enable pgvector extension on Supabase if it isn't enabled
+            try:
+                from sqlalchemy import text
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            except Exception:
+                # If the DB doesn't support vector or user lacks privileges, fail silently
+                # pgvector is pre-installed on Supabase so it should succeed.
+                pass
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database Connection Successful")
+    except Exception as e:
+        logger.error(f"Database Connection Failed: {str(e)}")
     yield
     # Shutdown: Clean up connections
     await engine.dispose()
