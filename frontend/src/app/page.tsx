@@ -229,7 +229,7 @@ export default function Home() {
   const fetchAuditForDoc = async (docId: number) => {
     if (connectionMode === "mock") return;
     try {
-      const cleanDocId = String(docId).split(':')[0];
+      const cleanDocId = String(docId).replace(/[^0-9]/g, '');
       const res = await fetch(`${backendUrl}/audits/document/${cleanDocId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -351,7 +351,7 @@ export default function Home() {
     }
 
     try {
-      const cleanDocId = String(docId).split(':')[0];
+      const cleanDocId = String(docId).replace(/[^0-9]/g, '');
       const res = await fetch(`https://pulseapex-api.onrender.com/api/v1/audits/trigger/${cleanDocId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
