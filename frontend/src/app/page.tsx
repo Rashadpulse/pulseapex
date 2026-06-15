@@ -20,8 +20,8 @@ export default function Home() {
   } = usePulseApexStore();
 
   // Hydration fix
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => { setHasMounted(true); }, []);
 
   // Local UI States
   const [email, setEmail] = useState("");
@@ -33,7 +33,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   
   // Real-time API config
-  const [backendUrl, setBackendUrl] = useState(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1");
+  const [backendUrl, setBackendUrl] = useState("https://pulseapex-api.onrender.com/api/v1");
   const [wsUrl, setWsUrl] = useState(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws");
   const [connectionMode, setConnectionMode] = useState<"mock" | "live">("live");
   const [wsConnected, setWsConnected] = useState(false);
@@ -589,11 +589,9 @@ export default function Home() {
   const selectedAudit = selectedDocId ? audits[selectedDocId] : null;
 
   // Hydration guard
-  if (!isMounted) {
+  if (!hasMounted) {
     return (
-      <div className="flex-1 flex items-center justify-center h-screen bg-[#030305]">
-        <div className="p-4 text-slate-500 font-semibold tracking-wider uppercase text-sm">Initializing Terminal Feed...</div>
-      </div>
+      <div className="p-8 text-center text-slate-500 animate-pulse">Synchronizing Security Environment...</div>
     );
   }
 

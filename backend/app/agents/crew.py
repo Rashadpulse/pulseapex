@@ -359,8 +359,8 @@ class PulseApexAuditNetwork:
             logger.info(f"[CrewAI] Audit {self.audit_id}: Launching crew.kickoff() in executor thread...")
 
             # Force initial AgentRun records to database so terminal wakes up from 'IDLE'
-            parser_run = AgentRun(audit_id=self.audit_id, agent_name="Document Parser Specialist", status="started")
-            auditor_run = AgentRun(audit_id=self.audit_id, agent_name="Corporate Compliance Auditor", status="started")
+            parser_run = AgentRun(audit_id=self.audit_id, agent_name="Document Parser Specialist", status="running")
+            auditor_run = AgentRun(audit_id=self.audit_id, agent_name="Corporate Compliance Auditor", status="running")
             self.db.add_all([parser_run, auditor_run])
             await self.db.commit()
 
@@ -372,7 +372,22 @@ class PulseApexAuditNetwork:
             await self.run_audit_simulation(doc)
             
         except Exception as e:
-            logger.error(f"[CrewAI] Audit {self.audit_id}: crew.kickoff() FAILED: {type(e).__name__}: {e}")
+            error_msg = f"crew.kickoff() FAILED: {type(e).__name__}: {e}"
+            logger.error(f"[CrewAI] Audit {self.audit_id}: {error_msg}")
+            
+            # Write error to database log row and safely broadcast state update
+            err_run = AgentRun(audit_id=self.audit_id, agent_name="System Orchestrator", status="failed")
+            self.db.add(err_run)
+            await self.db.commit()
+            await self.db.refresh(err_run)
+            await self.log_step(
+                err_run.id, 
+                "System Orchestrator", 
+                "Execution encountered a fatal error.", 
+                error_msg,
+                "error"
+            )
+            
             logger.info(f"[CrewAI] Audit {self.audit_id}: Falling back to simulation mode after error.")
             await self.run_audit_simulation(doc)
 

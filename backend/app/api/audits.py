@@ -46,9 +46,9 @@ async def run_crew_task(audit_id: int, doc_id: int, db_session: AsyncSession):
         except Exception as inner_e:
             logger.error(f"[CrewAI] Could not update audit status: {inner_e}")
 
-@router.post("/start/{document_id}", response_model=AuditResponse)
-@router.post("/trigger/{document_id}", response_model=AuditResponse)
-@router.get("/trigger/{document_id}", response_model=AuditResponse)
+@router.post("/start/{document_id:int}", response_model=AuditResponse)
+@router.post("/trigger/{document_id:int}", response_model=AuditResponse)
+@router.get("/trigger/{document_id:int}", response_model=AuditResponse)
 async def start_audit(
     document_id: int,
     background_tasks: BackgroundTasks,
@@ -113,7 +113,7 @@ async def get_audit_status(
 ):
     result = await db.execute(
         select(Audit)
-        .options(selectinload(Audit.findings))
+        .options(joinedload(Audit.findings))
         .where(
             Audit.id == audit_id,
             Audit.organization_id == current_user.organization_id
@@ -124,7 +124,7 @@ async def get_audit_status(
         raise HTTPException(status_code=404, detail="Audit job not found")
     return audit
 
-@router.get("/document/{document_id}", response_model=AuditResponse)
+@router.get("/document/{document_id:int}", response_model=AuditResponse)
 async def get_latest_audit_by_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
@@ -132,7 +132,7 @@ async def get_latest_audit_by_document(
 ):
     result = await db.execute(
         select(Audit)
-        .options(selectinload(Audit.findings))
+        .options(joinedload(Audit.findings))
         .where(
             Audit.document_id == document_id,
             Audit.organization_id == current_user.organization_id
@@ -191,7 +191,7 @@ async def export_audit_report(
     # Fetch audit with findings and document
     result = await db.execute(
         select(Audit)
-        .options(selectinload(Audit.findings), selectinload(Audit.document))
+        .options(joinedload(Audit.findings), joinedload(Audit.document))
         .where(
             Audit.id == audit_id,
             Audit.organization_id == current_user.organization_id
