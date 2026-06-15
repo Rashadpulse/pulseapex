@@ -11,6 +11,23 @@ import {
   AlertCircle, ShieldAlert, Cpu, Activity
 } from "lucide-react";
 
+if (typeof window !== 'undefined') {
+  const originalFetch = window.fetch;
+  window.fetch = async function (...args) {
+    let url = args[0];
+    if (typeof url === 'string' && url.includes('pulseapex-api.onrender.com')) {
+      // If the URL ends with /:1, strip it completely
+      if (url.endsWith('/:1')) {
+        url = url.replace('/:1', '');
+      }
+      // For individual document lookups like /document/19:1 -> transform to /document/19
+      url = url.replace(/:1$/, '').replace(/:1\//, '/');
+      args[0] = url;
+    }
+    return originalFetch.apply(this, args);
+  };
+}
+
 export default function Home() {
   const {
     token, setToken, user, setUser, documents, setDocuments, addDocument,
@@ -167,7 +184,8 @@ export default function Home() {
   useEffect(() => {
     if (connectionMode === "live" && token) {
       try {
-        const socket = new WebSocket(`${wsUrl}?token=${token}`);
+        const cleanToken = String(token || "").split(':')[0];
+        const socket = new WebSocket(`${wsUrl}?token=${cleanToken}`);
         wsRef.current = socket;
 
         socket.onopen = () => {
