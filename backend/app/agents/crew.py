@@ -290,28 +290,31 @@ class PulseApexAuditNetwork:
         Executes a real CrewAI network if API keys and libraries are present.
         Falls back to simulation mode if configuration fails.
         """
+        import logging
+        logger = logging.getLogger("uvicorn.error")
+
         if not CREWAI_AVAILABLE or settings.AI_PROVIDER == "mock":
+            logger.info(f"[CrewAI] Audit {self.audit_id}: CrewAI not available or AI_PROVIDER=mock. Running simulation.")
             await self.run_audit_simulation(doc)
             return
             
         # Configure LLMs
         llm = None
         if settings.AI_PROVIDER == "openai" and settings.OPENAI_API_KEY:
+            logger.info(f"[CrewAI] Audit {self.audit_id}: Using OpenAI GPT-4 provider.")
             llm = ChatOpenAI(model="gpt-4", openai_api_key=settings.OPENAI_API_KEY)
         elif settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
+            logger.info(f"[CrewAI] Audit {self.audit_id}: Using Gemini 1.5 Flash provider.")
             llm = ChatGoogleGenerAI(model="gemini-1.5-flash", google_api_key=settings.GEMINI_API_KEY)
             
         if not llm:
-            # No API keys available, fall back to simulation
+            logger.warning(f"[CrewAI] Audit {self.audit_id}: No valid API key found for AI_PROVIDER='{settings.AI_PROVIDER}'. Falling back to simulation.")
             await self.run_audit_simulation(doc)
             return
 
-        # Run the crew audit using standard CrewAI definitions
-        # For our production setup, we can write a wrapper around CrewAI's output.
-        # But to keep our network highly controllable, real-time streamed, and robust, 
-        # we will orchestrate the CrewAI execution steps inside async tasks, updating the database.
-        # Let's run a simplified execution loop using the LLM for actual data inspection!
         try:
+            logger.info(f"[CrewAI] Audit {self.audit_id}: Configuring CrewAI agents and tasks...")
+
             # Define Agents
             parser = Agent(
                 role='Document Parser Specialist',
@@ -331,10 +334,9 @@ class PulseApexAuditNetwork:
                 llm=llm
             )
             
-            # Simple tasks
             # Reading the file contents
             with open(doc.storage_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read(5000) # Read first 5000 chars
+                content = f.read(5000)
 
             task1 = Task(
                 description=f"Parse this document segment: \n\n{content}\n\nExtract the main fields: Title, Parties involved, Date, Financial amount, and check if it is signed.",
@@ -354,17 +356,18 @@ class PulseApexAuditNetwork:
                 process=Process.sequential
             )
             
-            # Run the crew
-            # Since CrewAI block is synchronous, we run it in an executor thread
+            logger.info(f"[CrewAI] Audit {self.audit_id}: Launching crew.kickoff() in executor thread...")
+
+            # Run the crew — CrewAI is synchronous, so run in executor thread
             loop = asyncio.get_running_loop()
             result_text = await loop.run_in_executor(None, crew.kickoff)
             
-            # We can log this output and run the simulation flow using the LLM result 
-            # to feed the database tables accurately.
+            logger.info(f"[CrewAI] Audit {self.audit_id}: crew.kickoff() completed. Processing results via simulation pipeline.")
             await self.run_audit_simulation(doc)
             
         except Exception as e:
-            # If any failure occurs during real crew run, fall back gracefully to simulation
+            logger.error(f"[CrewAI] Audit {self.audit_id}: crew.kickoff() FAILED: {type(e).__name__}: {e}")
+            logger.info(f"[CrewAI] Audit {self.audit_id}: Falling back to simulation mode after error.")
             await self.run_audit_simulation(doc)
 
     async def resume_audit_after_hitl(self):

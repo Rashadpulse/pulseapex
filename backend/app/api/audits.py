@@ -15,16 +15,36 @@ from app.agents.crew import PulseApexAuditNetwork
 router = APIRouter()
 
 async def run_crew_task(audit_id: int, doc_id: int, db_session: AsyncSession):
-    # Retrieve document
-    result = await db_session.execute(select(Document).where(Document.id == doc_id))
-    doc = result.scalars().first()
-    if not doc:
-        return
-        
-    # Create audit network agent run coordinator
-    # We will log to database
-    network = PulseApexAuditNetwork(audit_id, db_session)
-    await network.execute_real_crewai(doc)
+    """Background task: run the CrewAI agent network for a given audit."""
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+    logger.info(f"[CrewAI] Starting background crew task for audit_id={audit_id}, doc_id={doc_id}")
+
+    try:
+        # Retrieve document
+        result = await db_session.execute(select(Document).where(Document.id == doc_id))
+        doc = result.scalars().first()
+        if not doc:
+            logger.error(f"[CrewAI] Document {doc_id} not found. Aborting crew task.")
+            return
+
+        # Create audit network agent run coordinator and execute
+        network = PulseApexAuditNetwork(audit_id, db_session)
+        await network.execute_real_crewai(doc)
+        logger.info(f"[CrewAI] Crew task completed successfully for audit_id={audit_id}")
+
+    except Exception as e:
+        logger.error(f"[CrewAI] FATAL ERROR in background crew task for audit_id={audit_id}: {type(e).__name__}: {e}")
+        # Mark audit as failed so the frontend doesn't hang
+        try:
+            result = await db_session.execute(select(Audit).where(Audit.id == audit_id))
+            audit_obj = result.scalars().first()
+            if audit_obj and audit_obj.status not in ["completed", "failed"]:
+                audit_obj.status = "failed"
+                await db_session.commit()
+                logger.info(f"[CrewAI] Marked audit_id={audit_id} as 'failed'")
+        except Exception as inner_e:
+            logger.error(f"[CrewAI] Could not update audit status: {inner_e}")
 
 @router.post("/start/{document_id}", response_model=AuditResponse)
 @router.post("/trigger/{document_id}", response_model=AuditResponse)
