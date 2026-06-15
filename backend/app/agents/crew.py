@@ -358,6 +358,12 @@ class PulseApexAuditNetwork:
             
             logger.info(f"[CrewAI] Audit {self.audit_id}: Launching crew.kickoff() in executor thread...")
 
+            # Force initial AgentRun records to database so terminal wakes up from 'IDLE'
+            parser_run = AgentRun(audit_id=self.audit_id, agent_name="Document Parser Specialist", status="started")
+            auditor_run = AgentRun(audit_id=self.audit_id, agent_name="Corporate Compliance Auditor", status="started")
+            self.db.add_all([parser_run, auditor_run])
+            await self.db.commit()
+
             # Run the crew — CrewAI is synchronous, so run in executor thread
             loop = asyncio.get_running_loop()
             result_text = await loop.run_in_executor(None, crew.kickoff)
