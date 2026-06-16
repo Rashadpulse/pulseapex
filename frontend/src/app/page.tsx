@@ -229,7 +229,7 @@ export default function Home() {
         console.error("WS connect failed", err);
       }
     }
-  }, [connectionMode, token, wsUrl]);
+  }, [connectionMode, token, WS_BASE_URL]);
 
   // API Fetch Helpers
   const fetchDocuments = async (overrideToken?: string) => {
