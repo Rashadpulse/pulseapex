@@ -10,6 +10,7 @@ import {
   XCircle, Play, Info, ArrowRight, RefreshCw, Check, X, FileText,
   AlertCircle, ShieldAlert, Cpu, Activity
 } from "lucide-react";
+import { API_BASE_URL, WS_BASE_URL } from "../config/api";
 
 export default function Home() {
   const {
@@ -33,24 +34,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   
   // Real-time API config
-  // Derive wsUrl dynamically from backendUrl if not explicitly provided
-  const deriveWsUrl = (backend: string) => {
-    if (backend.includes("localhost") || backend.includes("127.0.0.1")) {
-      return backend.replace("http://", "ws://").replace("/api/v1", "/ws");
-    }
-    return backend.replace("https://", "wss://").replace("http://", "ws://").replace("/api/v1", "/ws");
-  };
-
-  const initialBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://pulseapex-api.onrender.com/api/v1";
-  const [backendUrl, setBackendUrl] = useState(initialBackendUrl);
-  
-  // Ensure wsUrl always has the /ws path if the user forgets it in their env var
-  let envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
-  if (envWsUrl && !envWsUrl.endsWith("/ws")) {
-    envWsUrl = envWsUrl.replace(/\/$/, "") + "/ws";
-  }
-  const [wsUrl, setWsUrl] = useState(envWsUrl || deriveWsUrl(initialBackendUrl));
-  
   const [connectionMode, setConnectionMode] = useState<"mock" | "live">("live");
   const [wsConnected, setWsConnected] = useState(false);
 
@@ -184,7 +167,7 @@ export default function Home() {
     if (connectionMode === "live" && token) {
       try {
         const cleanToken = String(token || "").split(':')[0];
-        const socket = new WebSocket(`${wsUrl}?token=${cleanToken}`);
+        const socket = new WebSocket(`${WS_BASE_URL}?token=${cleanToken}`);
         wsRef.current = socket;
 
         socket.onopen = () => {
@@ -253,7 +236,7 @@ export default function Home() {
     if (connectionMode === "mock") return;
     try {
       const activeToken = overrideToken || token;
-      let baseDocumentsUrl = `${backendUrl}/documents`;
+      let baseDocumentsUrl = `${API_BASE_URL}/documents`;
       const res = await fetch(baseDocumentsUrl, {
         headers: { Authorization: `Bearer ${activeToken}` }
       });
@@ -272,7 +255,7 @@ export default function Home() {
       const activeToken = overrideToken || token;
       let rawDocId = docId;
       const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
-      const res = await fetch(`${backendUrl}/audits/document/${strictId}`, {
+      const res = await fetch(`${API_BASE_URL}/audits/document/${strictId}`, {
         headers: { Authorization: `Bearer ${activeToken}` }
       });
       if (res.ok) {
@@ -310,7 +293,7 @@ export default function Home() {
 
     try {
       if (isRegistering) {
-        const res = await fetch(`${backendUrl}/auth/register`, {
+        const res = await fetch(`${API_BASE_URL}/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -331,7 +314,7 @@ export default function Home() {
         params.append("username", email);
         params.append("password", password);
 
-        const res = await fetch(`${backendUrl}/auth/login`, {
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: params
@@ -343,7 +326,7 @@ export default function Home() {
         setToken(tokenData.access_token);
         
         // Fetch current user details
-        const userRes = await fetch(`${backendUrl}/auth/me`, {
+        const userRes = await fetch(`${API_BASE_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${tokenData.access_token}` }
         });
         if (userRes.ok) {
@@ -395,7 +378,7 @@ export default function Home() {
     try {
       let rawDocId = docId;
       const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
-      const res = await fetch(`${backendUrl}/audits/trigger/${strictId}`, {
+      const res = await fetch(`${API_BASE_URL}/audits/trigger/${strictId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -471,7 +454,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${backendUrl}/documents/upload`, {
+      const res = await fetch(`${API_BASE_URL}/documents/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -482,7 +465,7 @@ export default function Home() {
 
         // Immediately trigger the audit so an audit record exists before any GET
         try {
-          const triggerRes = await fetch(`${backendUrl}/audits/trigger/${data.id}`, {
+          const triggerRes = await fetch(`${API_BASE_URL}/audits/trigger/${data.id}`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -542,7 +525,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${backendUrl}/hitl/decide`, {
+      const res = await fetch(`${API_BASE_URL}/hitl/decide`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -556,7 +539,7 @@ export default function Home() {
       });
       if (res.ok) {
         // Refresh pending approvals queue
-        const approvalsRes = await fetch(`${backendUrl}/hitl/pending`, {
+        const approvalsRes = await fetch(`${API_BASE_URL}/hitl/pending`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (approvalsRes.ok) {
@@ -590,7 +573,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${backendUrl}/compliance`, {
+      const res = await fetch(`${API_BASE_URL}/compliance`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -770,15 +753,15 @@ export default function Home() {
                 <div className="flex flex-col gap-1.5 mt-2">
                   <input
                     type="text"
-                    value={backendUrl}
-                    onChange={(e) => setBackendUrl(e.target.value)}
+                    value={API_BASE_URL} readOnly
+                    
                     placeholder="API Endpoint"
                     className="w-full px-2 py-1 bg-gray-950 border border-gray-900 rounded text-[10px] text-gray-400 focus:outline-none"
                   />
                   <input
                     type="text"
-                    value={wsUrl}
-                    onChange={(e) => setWsUrl(e.target.value)}
+                    value={WS_BASE_URL} readOnly
+                    
                     placeholder="WS Endpoint"
                     className="w-full px-2 py-1 bg-gray-950 border border-gray-900 rounded text-[10px] text-gray-400 focus:outline-none"
                   />
