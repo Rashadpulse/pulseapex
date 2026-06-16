@@ -29,8 +29,39 @@ async def run_crew_task(audit_id: int, doc_id: int):
                 logger.error(f"[CrewAI] Document {doc_id} not found. Aborting crew task.")
                 return
 
-            network = PulseApexAuditNetwork(audit_id, db_session)
+            # Retrieve the audit's organization_id for WebSocket broadcasting
+            audit_result = await db_session.execute(select(Audit).where(Audit.id == audit_id))
+            audit_obj = audit_result.scalars().first()
+            org_id = audit_obj.organization_id if audit_obj else 1
+
+            # Wire up WebSocket broadcast callback for real-time log streaming
+            from app.websockets.connection import manager
+
+            async def ws_log_callback(agent_name: str, message: str, thought: str):
+                try:
+                    await manager.broadcast_to_org(org_id, {
+                        "type": "agent_log",
+                        "audit_id": audit_id,
+                        "agent_name": agent_name,
+                        "message": message,
+                        "agent_thought": thought
+                    })
+                except Exception as ws_err:
+                    logger.debug(f"[WS] Broadcast failed (non-fatal): {ws_err}")
+
+            network = PulseApexAuditNetwork(audit_id, db_session, log_callback=ws_log_callback)
             await network.execute_real_crewai(doc)
+
+            # Broadcast audit completion event
+            try:
+                await manager.broadcast_to_org(org_id, {
+                    "type": "audit_update",
+                    "audit_id": audit_id,
+                    "status": "completed"
+                })
+            except Exception:
+                pass
+
         logger.info(f"[CrewAI] Crew task completed successfully for audit_id={audit_id}")
 
     except Exception as e:

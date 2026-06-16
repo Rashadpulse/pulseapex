@@ -16,12 +16,22 @@ if (typeof window !== 'undefined') {
   window.fetch = async function (...args) {
     let url = args[0];
     if (typeof url === 'string' && url.includes('pulseapex-api.onrender.com')) {
-      // If the URL ends with /:1, strip it completely
-      if (url.endsWith('/:1')) {
-        url = url.replace('/:1', '');
+      // Strip spurious ":1" suffixes from IDs
+      url = url.replace(/:1(?=[/?#]|$)/g, '');
+      // Ensure API path always ends with a trailing slash (prevents 307 redirects)
+      try {
+        const urlObj = new URL(url);
+        if (!urlObj.pathname.endsWith('/')) {
+          urlObj.pathname += '/';
+        }
+        url = urlObj.toString();
+      } catch (e) {
+        // If URL parsing fails, just append slash directly
+        if (!url.split('?')[0].endsWith('/')) {
+          const parts = url.split('?');
+          url = parts[0] + '/' + (parts[1] ? '?' + parts[1] : '');
+        }
       }
-      // For individual document lookups like /document/19:1 -> transform to /document/19
-      url = url.replace(/:1$/, '').replace(/:1\//, '/');
       args[0] = url;
     }
     return originalFetch.apply(this, args);
@@ -264,7 +274,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (selectedDocId && token && connectionMode === "live") {
+    if (selectedDocId && token && connectionMode === "live" && !audits[selectedDocId]) {
       fetchAuditForDoc(selectedDocId);
     }
   }, [selectedDocId, token, connectionMode]);
@@ -458,9 +468,25 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json();
         addDocument(data);
+
+        // Immediately trigger the audit so an audit record exists before any GET
+        try {
+          const triggerRes = await fetch(`${backendUrl}/audits/trigger/${data.id}`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (triggerRes.ok) {
+            const auditData = await triggerRes.json();
+            setAudit(data.id, auditData);
+            clearAgentLogs();
+          }
+        } catch (triggerErr) {
+          console.error("Failed to auto-trigger audit", triggerErr);
+        }
+
         setUploadingFile(null);
-        setActiveTab("workspace");
         setSelectedDocId(data.id);
+        setActiveTab("agent-terminal");
       }
     } catch (e) {
       console.error("Upload failed", e);
