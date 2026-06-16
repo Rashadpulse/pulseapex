@@ -487,12 +487,24 @@ class PulseApexAuditNetwork:
             
         # Configure LLM
         llm = None
-        if settings.AI_PROVIDER == "openai" and settings.OPENAI_API_KEY and OPENAI_LLM_AVAILABLE:
+        try:
+            from crewai import LLM
+            CREWAI_NATIVE_LLM = True
+        except ImportError:
+            CREWAI_NATIVE_LLM = False
+
+        if settings.AI_PROVIDER == "openai" and settings.OPENAI_API_KEY:
             logger.info(f"[CrewAI] Audit {self.audit_id}: Using OpenAI GPT-4 provider.")
-            llm = ChatOpenAI(model="gpt-4", openai_api_key=settings.OPENAI_API_KEY)
-        elif settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY and GEMINI_LLM_AVAILABLE:
+            if CREWAI_NATIVE_LLM:
+                llm = LLM(model="gpt-4", api_key=settings.OPENAI_API_KEY)
+            elif OPENAI_LLM_AVAILABLE:
+                llm = ChatOpenAI(model="gpt-4", openai_api_key=settings.OPENAI_API_KEY)
+        elif settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
             logger.info(f"[CrewAI] Audit {self.audit_id}: Using Gemini 3.5 Flash provider.")
-            llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
+            if CREWAI_NATIVE_LLM:
+                llm = LLM(model="gemini/gemini-3.5-flash", api_key=settings.GEMINI_API_KEY)
+            elif GEMINI_LLM_AVAILABLE:
+                llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
             
         if not llm:
             logger.warning(f"[CrewAI] Audit {self.audit_id}: No valid API key found for AI_PROVIDER='{settings.AI_PROVIDER}'. Falling back to simulation.")
