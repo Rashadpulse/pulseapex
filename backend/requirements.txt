@@ -18,7 +18,7 @@ crewai>=0.28.8
 langchain-core>=0.1.30
 langchain-community>=0.0.27
 langchain-openai>=0.1.0
-langchain-google-genai>=1.0.1
+langchain-google-genai
 redis>=5.0.3
 celery>=5.3.6
 python-dotenv>=1.0.1

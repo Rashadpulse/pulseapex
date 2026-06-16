@@ -189,6 +189,10 @@ export default function Home() {
             } else if (data.type === "audit_update") {
               // Refresh documents and audits
               fetchDocuments();
+              const currentDocId = usePulseApexStore.getState().selectedDocId;
+              if (currentDocId) {
+                fetchAuditForDoc(currentDocId);
+              }
             }
           } catch (e) {
             console.error("Error parsing socket frame", e);
@@ -213,12 +217,13 @@ export default function Home() {
   }, [connectionMode, token, wsUrl]);
 
   // API Fetch Helpers
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (overrideToken?: string) => {
     if (connectionMode === "mock") return;
     try {
+      const activeToken = overrideToken || token;
       let baseDocumentsUrl = `${backendUrl}/documents`;
       const res = await fetch(baseDocumentsUrl, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${activeToken}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -229,13 +234,14 @@ export default function Home() {
     }
   };
 
-  const fetchAuditForDoc = async (docId: number) => {
+  const fetchAuditForDoc = async (docId: number, overrideToken?: string) => {
     if (connectionMode === "mock") return;
     try {
+      const activeToken = overrideToken || token;
       let rawDocId = docId;
       const strictId = String(rawDocId || "").split(':')[0].replace(/[^0-9]/g, '');
       const res = await fetch(`${backendUrl}/audits/document/${strictId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${activeToken}` }
       });
       if (res.ok) {
         const auditData = await res.json();
@@ -312,7 +318,7 @@ export default function Home() {
           const userData = await userRes.json();
           setUser(userData);
         }
-        fetchDocuments();
+        fetchDocuments(tokenData.access_token);
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
