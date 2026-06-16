@@ -10,7 +10,7 @@ from app.services.vector_db import VectorDBService
 
 router = APIRouter()
 
-@router.post("/", response_model=ComplianceRuleResponse)
+@router.post("", response_model=ComplianceRuleResponse)
 async def create_compliance_rule(
     rule_in: ComplianceRuleCreate,
     db: AsyncSession = Depends(get_db),
@@ -26,7 +26,7 @@ async def create_compliance_rule(
     )
     return rule
 
-@router.get("/", response_model=List[ComplianceRuleResponse])
+@router.get("", response_model=List[ComplianceRuleResponse])
 async def list_compliance_rules(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

@@ -11,33 +11,6 @@ import {
   AlertCircle, ShieldAlert, Cpu, Activity
 } from "lucide-react";
 
-if (typeof window !== 'undefined') {
-  const originalFetch = window.fetch;
-  window.fetch = async function (...args) {
-    let url = args[0];
-    if (typeof url === 'string' && url.includes('pulseapex-api.onrender.com')) {
-      // Strip spurious ":1" suffixes from IDs
-      url = url.replace(/:1(?=[/?#]|$)/g, '');
-      // Ensure API path always ends with a trailing slash (prevents 307 redirects)
-      try {
-        const urlObj = new URL(url);
-        if (!urlObj.pathname.endsWith('/')) {
-          urlObj.pathname += '/';
-        }
-        url = urlObj.toString();
-      } catch (e) {
-        // If URL parsing fails, just append slash directly
-        if (!url.split('?')[0].endsWith('/')) {
-          const parts = url.split('?');
-          url = parts[0] + '/' + (parts[1] ? '?' + parts[1] : '');
-        }
-      }
-      args[0] = url;
-    }
-    return originalFetch.apply(this, args);
-  };
-}
-
 export default function Home() {
   const {
     token, setToken, user, setUser, documents, setDocuments, addDocument,
@@ -579,7 +552,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${backendUrl}/compliance/`, {
+      const res = await fetch(`${backendUrl}/compliance`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
