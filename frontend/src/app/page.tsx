@@ -41,9 +41,16 @@ export default function Home() {
     return backend.replace("https://", "wss://").replace("http://", "ws://").replace("/api/v1", "/ws");
   };
 
-  const initialBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
+  const initialBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://pulseapex-api.onrender.com/api/v1";
   const [backendUrl, setBackendUrl] = useState(initialBackendUrl);
-  const [wsUrl, setWsUrl] = useState(process.env.NEXT_PUBLIC_WS_URL || deriveWsUrl(initialBackendUrl));
+  
+  // Ensure wsUrl always has the /ws path if the user forgets it in their env var
+  let envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
+  if (envWsUrl && !envWsUrl.endsWith("/ws")) {
+    envWsUrl = envWsUrl.replace(/\/$/, "") + "/ws";
+  }
+  const [wsUrl, setWsUrl] = useState(envWsUrl || deriveWsUrl(initialBackendUrl));
+  
   const [connectionMode, setConnectionMode] = useState<"mock" | "live">("live");
   const [wsConnected, setWsConnected] = useState(false);
 
