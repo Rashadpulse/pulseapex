@@ -33,8 +33,17 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   
   // Real-time API config
-  const [backendUrl, setBackendUrl] = useState("https://pulseapex-api.onrender.com/api/v1");
-  const [wsUrl, setWsUrl] = useState(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws");
+  // Derive wsUrl dynamically from backendUrl if not explicitly provided
+  const deriveWsUrl = (backend: string) => {
+    if (backend.includes("localhost") || backend.includes("127.0.0.1")) {
+      return backend.replace("http://", "ws://").replace("/api/v1", "/ws");
+    }
+    return backend.replace("https://", "wss://").replace("http://", "ws://").replace("/api/v1", "/ws");
+  };
+
+  const initialBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
+  const [backendUrl, setBackendUrl] = useState(initialBackendUrl);
+  const [wsUrl, setWsUrl] = useState(process.env.NEXT_PUBLIC_WS_URL || deriveWsUrl(initialBackendUrl));
   const [connectionMode, setConnectionMode] = useState<"mock" | "live">("live");
   const [wsConnected, setWsConnected] = useState(false);
 
@@ -179,19 +188,35 @@ export default function Home() {
           console.log("RAW WEBSOCKET DATA RECEIVED:", event.data);
           try {
             const data = JSON.parse(event.data);
+            const state = usePulseApexStore.getState();
+
             if (data.type === "agent_log") {
-              addAgentLog({
-                agent: data.agent_name,
-                message: data.message,
-                thought: data.agent_thought || "",
-                timestamp: new Date().toLocaleTimeString()
-              });
+              // Ensure we only show logs for the currently selected audit's document
+              const currentDocId = state.selectedDocId;
+              const currentAudit = currentDocId ? state.audits[currentDocId] : null;
+              
+              if (!currentAudit || data.audit_id === currentAudit.id) {
+                addAgentLog({
+                  agent: data.agent_name,
+                  message: data.message,
+                  thought: data.agent_thought || "",
+                  timestamp: new Date().toLocaleTimeString()
+                });
+              }
             } else if (data.type === "audit_update") {
-              // Refresh documents and audits
+              // Refresh documents globally
               fetchDocuments();
-              const currentDocId = usePulseApexStore.getState().selectedDocId;
-              if (currentDocId) {
-                fetchAuditForDoc(currentDocId);
+              
+              // Find the document associated with this completed audit
+              const targetDocId = Object.keys(state.audits).find(
+                docId => state.audits[Number(docId)]?.id === data.audit_id
+              );
+              
+              if (targetDocId) {
+                fetchAuditForDoc(Number(targetDocId));
+              } else if (state.selectedDocId) {
+                // Fallback: just refresh the current one
+                fetchAuditForDoc(state.selectedDocId);
               }
             }
           } catch (e) {
