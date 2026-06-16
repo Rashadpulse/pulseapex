@@ -7,15 +7,26 @@
  * for both local development and production Vercel environments.
  */
 
+// Helper to ensure API URL has the correct /api/v1 path and no trailing slashes
+const formatApiUrl = (url: string) => {
+  // Strip trailing slashes
+  let cleanUrl = url.replace(/\/+$/, "");
+  
+  // Append /api/v1 if it doesn't already have it
+  if (!cleanUrl.endsWith("/api/v1")) {
+    cleanUrl = `${cleanUrl}/api/v1`;
+  }
+  
+  return cleanUrl;
+};
+
 // 1. Primary API URL
 // Priority:
 // - NEXT_PUBLIC_API_URL
 // - NEXT_PUBLIC_BACKEND_URL (legacy)
 // - Fallback to http://localhost:8000/api/v1
-export const API_BASE_URL = 
-  process.env.NEXT_PUBLIC_API_URL || 
-  process.env.NEXT_PUBLIC_BACKEND_URL || 
-  "http://localhost:8000/api/v1";
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
+export const API_BASE_URL = formatApiUrl(rawApiUrl);
 
 // Helper to ensure WebSocket URL has the correct /ws path
 const ensureWsPath = (url: string) => {
