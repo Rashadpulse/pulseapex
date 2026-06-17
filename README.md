@@ -1,5 +1,5 @@
 #PulseApex: Multi-Agent Autonomous Corporate Compliance Auditor
-🔗 Live Deployment | 🚀 Powered by CrewAI & FastAPI
+🔗 Live Deployment : pulseapex1.vercel.app. | 🚀 Powered by CrewAI & FastAPI
 PulseApex is an enterprise-grade, full-stack compliance automation pipeline designed to systematically ingest corporate documents, parse multi-format data streams, and audit text blocks against fine-grained organizational policies. By leveraging an asynchronous multi-agent framework, PulseApex replaces slow, error-prone manual auditing cycles with real-time anomaly detection, actionable correction scripts, and a human-in-the-loop review interface.
 
 #🏗️ System Architecture & Data Flow
