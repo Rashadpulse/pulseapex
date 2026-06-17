@@ -46,40 +46,40 @@ PostgreSQL database instance running locally or hosted on the cloud.
 
 A Gemini API Key from Google AI Studio.
 
- Clone the Repository
+## Clone the Repository
  git clone https://github.com/Rashadpulse/AI_Code_Generation_Evaluation_Portfolio.git
 cd AI_Code_Generation_Evaluation_Portfolio
 
  Configure Environment Variables
 Create a .env file in your root backend directory to isolate your environment variables safely.
-# AI Model Configuration
+## AI Model Configuration
 GEMINI_API_KEY=your_gemini_api_key_here
 MODEL_NAME=gemini/gemini-3.5-flash
 
-# Database Infrastructure
+## Database Infrastructure
 DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/pulseapex_db
 
-# API & Gateway Settings
+## API & Gateway Settings
 API_BASE_URL=http://localhost:8000
 ENVIRONMENT=development
 
-3. Run the Backend API Engine
-4. # Navigate to backend, build virtual environment
+ Run the Backend API Engine
+## Navigate to backend, build virtual environment
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 
-# Install required packages
+## Install required packages
 pip install -r requirements.txt
 
-# Start the asynchronous Uvicorn server
+## Start the asynchronous Uvicorn server
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
  Boot Up the Next.js Frontend Dashboard
  Navigate to the frontend directory
 cd ../frontend
 
-# Install dependencies and launch dev server
+## Install dependencies and launch dev server
 npm install
 npm run dev
 Open http://localhost:3000 in your browser to begin testing.
