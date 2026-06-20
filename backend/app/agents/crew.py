@@ -3,6 +3,20 @@ import random
 import os
 import json
 import re
+
+API_KEY = "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"
+BASE_URL = "https://openrouter.ai/api/v1"
+
+def get_openrouter_llm(model_name: str):
+    from crewai import LLM
+    # Prefixing with 'openrouter/' ensures internal LiteLLM routes correctly
+    return LLM(
+        model=f"openrouter/{model_name}",
+        api_key=API_KEY,
+        base_url=BASE_URL,
+        temperature=0.1  # Low temperature for strict structural audit outputs
+    )
+
 from datetime import datetime
 from typing import Dict, List, Any, Callable, Awaitable, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -148,24 +162,7 @@ class PulseApexAuditNetwork:
         rules = rules_result.scalars().all()
         return [f"[{r.category}] {r.title}: {r.rule_text}" for r in rules]
 
-    def _get_llm(self):
-        try:
-            from crewai import LLM
-            CREWAI_NATIVE_LLM = True
-        except ImportError:
-            CREWAI_NATIVE_LLM = False
 
-        if settings.AI_PROVIDER == "openai" and settings.OPENAI_API_KEY:
-            if CREWAI_NATIVE_LLM:
-                return LLM(model="gpt-4", api_key=settings.OPENAI_API_KEY)
-            elif OPENAI_LLM_AVAILABLE:
-                return ChatOpenAI(model="gpt-4", openai_api_key=settings.OPENAI_API_KEY)
-        elif settings.AI_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
-            if CREWAI_NATIVE_LLM:
-                return LLM(model="gemini/gemini-3.5-flash", api_key=settings.GEMINI_API_KEY)
-            elif GEMINI_LLM_AVAILABLE:
-                return ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
-        return None
 
     async def _save_findings_and_handle_hitl(self, findings: List[Dict[str, Any]]) -> float:
         """
@@ -499,16 +496,8 @@ class PulseApexAuditNetwork:
         import logging
         logger = logging.getLogger("uvicorn.error")
 
-        if not CREWAI_AVAILABLE or settings.AI_PROVIDER == "mock":
-            logger.info(f"[CrewAI] Audit {self.audit_id}: CrewAI not available or AI_PROVIDER=mock. Running simulation.")
-            await self.run_audit_simulation(doc)
-            return
-            
-        # Configure LLM
-        llm = self._get_llm()
-            
-        if not llm:
-            logger.warning(f"[CrewAI] Audit {self.audit_id}: No valid API key found for AI_PROVIDER='{settings.AI_PROVIDER}'. Falling back to simulation.")
+        if not CREWAI_AVAILABLE:
+            logger.info(f"[CrewAI] Audit {self.audit_id}: CrewAI not available. Running simulation.")
             await self.run_audit_simulation(doc)
             return
 
@@ -544,7 +533,7 @@ class PulseApexAuditNetwork:
                 ),
                 verbose=False,
                 allow_delegation=False,
-                llm=llm
+                llm=get_openrouter_llm("google/gemma-4-31b-it:free")
             )
 
             parse_task = Task(
@@ -597,7 +586,7 @@ class PulseApexAuditNetwork:
                 ),
                 verbose=False,
                 allow_delegation=False,
-                llm=llm
+                llm=get_openrouter_llm("cohere/north-mini-code:free")
             )
 
             audit_task = Task(
@@ -636,7 +625,7 @@ class PulseApexAuditNetwork:
                 ),
                 verbose=False,
                 allow_delegation=False,
-                llm=llm
+                llm=get_openrouter_llm("openai/gpt-oss-120b:free")
             )
 
             patch_task = Task(
@@ -661,7 +650,7 @@ class PulseApexAuditNetwork:
                 ),
                 verbose=False,
                 allow_delegation=False,
-                llm=llm
+                llm=get_openrouter_llm("cohere/north-mini-code:free")
             )
 
             verification_ai_task = Task(
@@ -828,10 +817,7 @@ class PulseApexAuditNetwork:
             "Analyzing findings and generating C-Suite brief."
         )
 
-        llm = self._get_llm()
-        summary_text = "Audit Completed. No summary generated due to LLM error."
-        
-        if llm and CREWAI_AVAILABLE:
+        if CREWAI_AVAILABLE:
             from crewai import Agent, Task, Crew
             summary_ai_agent = Agent(
                 role='Chief Executive Summarizer',
@@ -839,7 +825,7 @@ class PulseApexAuditNetwork:
                 backstory='You are a C-Suite advisor who translates complex compliance audits into concise, impactful executive summaries.',
                 verbose=False,
                 allow_delegation=False,
-                llm=llm
+                llm=get_openrouter_llm("openai/gpt-oss-120b:free")
             )
             
             findings_str = "\\n".join([f"[{f.get('severity', 'N/A').upper()}] {f.get('title', 'N/A')}: {f.get('description', 'N/A')}" for f in findings])
