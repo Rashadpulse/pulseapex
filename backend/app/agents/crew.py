@@ -4,19 +4,6 @@ import os
 import json
 import re
 
-# Securely load the API key from environment variables (via config.py)
-API_KEY = settings.OPENROUTER_API_KEY
-BASE_URL = "https://openrouter.ai/api/v1"
-
-def get_openrouter_llm(model_name: str):
-    from crewai import LLM
-    # Prefixing with 'openrouter/' ensures internal LiteLLM routes correctly
-    return LLM(
-        model=f"openrouter/{model_name}",
-        api_key=API_KEY,
-        base_url=BASE_URL,
-        temperature=0.1  # Low temperature for strict structural audit outputs
-    )
 
 from datetime import datetime
 from typing import Dict, List, Any, Callable, Awaitable, Optional
@@ -45,6 +32,21 @@ try:
     GEMINI_LLM_AVAILABLE = True
 except ImportError:
     GEMINI_LLM_AVAILABLE = False
+
+
+# Securely load the API key from environment variables (via config.py)
+API_KEY = settings.OPENROUTER_API_KEY
+BASE_URL = "https://openrouter.ai/api/v1"
+
+def get_openrouter_llm(model_name: str):
+    from crewai import LLM
+    # Prefixing with 'openrouter/' ensures internal LiteLLM routes correctly
+    return LLM(
+        model=f"openrouter/{model_name}",
+        api_key=API_KEY,
+        base_url=BASE_URL,
+        temperature=0.1  # Low temperature for strict structural audit outputs
+    )
 
 
 def _extract_json_from_text(text: str) -> Optional[Any]:
