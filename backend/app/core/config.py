@@ -29,10 +29,11 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
     
-    # AI Providers (OpenAI, Gemini, or Mock)
-    AI_PROVIDER: str = "gemini"  # Can be "openai", "gemini", or "mock"
+    # AI Providers (OpenRouter, OpenAI, Gemini, or Mock)
+    AI_PROVIDER: str = "openrouter"  # Can be "openrouter", "openai", "gemini", or "mock"
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    OPENROUTER_API_KEY: Optional[str] = None
     
     # Redis configuration for background workers
     REDIS_URL: str = "redis://localhost:6379/0"

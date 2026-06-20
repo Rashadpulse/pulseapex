@@ -4,7 +4,8 @@ import os
 import json
 import re
 
-API_KEY = "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"
+# Securely load the API key from environment variables (via config.py)
+API_KEY = settings.OPENROUTER_API_KEY
 BASE_URL = "https://openrouter.ai/api/v1"
 
 def get_openrouter_llm(model_name: str):
@@ -496,10 +497,13 @@ class PulseApexAuditNetwork:
         import logging
         logger = logging.getLogger("uvicorn.error")
 
-        if not CREWAI_AVAILABLE:
-            logger.info(f"[CrewAI] Audit {self.audit_id}: CrewAI not available. Running simulation.")
+        if not CREWAI_AVAILABLE or settings.AI_PROVIDER == "mock":
+            logger.info(f"[CrewAI] Audit {self.audit_id}: CrewAI not available or AI_PROVIDER=mock. Running simulation.")
             await self.run_audit_simulation(doc)
             return
+
+        if not settings.OPENROUTER_API_KEY:
+            logger.warning(f"[CrewAI] Audit {self.audit_id}: No OPENROUTER_API_KEY found. Falling back to simulation.")
 
         try:
             logger.info(f"[CrewAI] Audit {self.audit_id}: Starting full 5-agent pipeline...")
