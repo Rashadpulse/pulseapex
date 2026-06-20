@@ -29,3 +29,5 @@ matplotlib>=3.8.3
 scikit-learn>=1.4.1.post1
 numpy>=1.26.4
 pgvector>=0.2.5
+
+litellm
