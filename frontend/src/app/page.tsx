@@ -43,7 +43,13 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
 
-  // New Compliance Rule state
+  // Optional Compliance Rules Management state
+  const [showRulesManager, setShowRulesManager] = useState(false);
+  const [rulesIngestionMode, setRulesIngestionMode] = useState<"automated" | "manual">("automated");
+  const [isProcessingRules, setIsProcessingRules] = useState(false);
+  const [rulesDragActive, setRulesDragActive] = useState(false);
+
+  // New Compliance Rule manual state
   const [newRuleTitle, setNewRuleTitle] = useState("");
   const [newRuleCategory, setNewRuleCategory] = useState("Tax");
   const [newRuleText, setNewRuleText] = useState("");
@@ -899,7 +905,7 @@ export default function Home() {
 
           {/* TAB: AUDIT & FILES */}
           {activeTab === "audit" && (
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col gap-6">
               <div className="flex-1 space-y-6">
                             <div className="max-w-2xl mx-auto space-y-6">
               <div className="glass-panel p-6 rounded-2xl text-center space-y-4">
@@ -1223,91 +1229,121 @@ export default function Home() {
             </div>
                 </div>
               </div>
-              <div className="w-full lg:w-96 shrink-0">
-                <div className="sticky top-6">
-                              <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Rule Upload form */}
-                <div className="lg:col-span-1">
-                  <div className="glass-panel p-6 rounded-2xl space-y-4">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Ingest Policy Guidelines</h4>
+              {/* Collapsible Optional Compliance Rules Management Module */}
+              <div className="pt-6 border-t border-slate-200">
+                <button 
+                  onClick={() => setShowRulesManager(!showRulesManager)}
+                  className="w-full flex items-center justify-between p-4 premium-card bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-lg font-bold text-slate-800">Compliance Rules Management</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">Optional</span>
+                  </div>
+                  {showRulesManager ? <X className="w-5 h-5 text-slate-500" /> : <ArrowRight className="w-5 h-5 text-slate-500" />}
+                </button>
 
-                    <form onSubmit={handleAddRule} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Rule Reference Title</label>
-                        <input
-                          type="text"
-                          required
-                          value={newRuleTitle}
-                          onChange={(e) => setNewRuleTitle(e.target.value)}
-                          placeholder="e.g., Dual Sign-off Guideline"
-                          className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Auditing Category</label>
-                        <select
-                          value={newRuleCategory}
-                          onChange={(e) => setNewRuleCategory(e.target.value)}
-                          className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-700"
-                        >
-                          <option value="Tax">Tax & Finance</option>
-                          <option value="Contract">Contracts & Legal</option>
-                          <option value="Procurement">Procurement</option>
-                          <option value="Governance">Governance</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Policy Text Content (Chunked for RAG)</label>
-                        <textarea
-                          required
-                          rows={4}
-                          value={newRuleText}
-                          onChange={(e) => setNewRuleText(e.target.value)}
-                          placeholder="Provide the compliance policy paragraph. The auditor agent will run semantic indexing on this text."
-                          className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full py-2.5 bg-cyan-600 hover:bg-sky-600 text-white rounded-lg font-bold text-xs transition-all shadow-md shadow-cyan-500/10 cursor-pointer"
+                {showRulesManager && (
+                  <div className="mt-4 p-6 premium-card animate-in fade-in slide-in-from-top-4 duration-300">
+                    
+                    {/* Tab Toggles */}
+                    <div className="flex gap-4 mb-6 border-b border-slate-200 pb-4">
+                      <button 
+                        onClick={() => setRulesIngestionMode("automated")}
+                        className={`px-4 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${rulesIngestionMode === "automated" ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"}`}
                       >
-                        Ingest & Vector Index Rule
+                        Automated Document Ingestion
                       </button>
-                    </form>
-                  </div>
-                </div>
-
-                {/* Rules inventory list */}
-                <div className="lg:col-span-2">
-                  <div className="glass-panel p-6 rounded-2xl space-y-4">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Active Compliance Guidelines</h4>
-
-                    <div className="space-y-3">
-                      {complianceRules.length === 0 ? (
-                        <div className="text-center py-10 text-xs text-slate-500">No custom compliance rules added yet.</div>
-                      ) : (
-                        complianceRules.map((rule) => (
-                          <div key={rule.id} className="p-4 bg-sky-50/45 border border-slate-100 rounded-xl space-y-2">
-                            <div className="flex justify-between items-start">
-                              <h5 className="font-bold text-sm text-sky-600">{rule.title}</h5>
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold border bg-white text-slate-600 border-slate-200 uppercase">
-                                {rule.category}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-600 leading-relaxed">{rule.rule_text}</p>
-                          </div>
-                        ))
-                      )}
+                      <button 
+                        onClick={() => setRulesIngestionMode("manual")}
+                        className={`px-4 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${rulesIngestionMode === "manual" ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"}`}
+                      >
+                        Manual Ingestion
+                      </button>
                     </div>
+
+                    {/* Automated Ingestion View */}
+                    {rulesIngestionMode === "automated" && (
+                      <div className="space-y-6">
+                        <div 
+                          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all ${rulesDragActive ? "border-indigo-500 bg-indigo-50" : "border-slate-300 bg-slate-50/50 hover:bg-slate-50"}`}
+                          onDragEnter={() => setRulesDragActive(true)}
+                          onDragLeave={() => setRulesDragActive(false)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setRulesDragActive(false);
+                            setIsProcessingRules(true);
+                            setTimeout(() => setIsProcessingRules(false), 2000); // Mock processing
+                          }}
+                        >
+                          {isProcessingRules ? (
+                            <div className="flex flex-col items-center gap-3">
+                              <RefreshCw className="w-10 h-10 text-indigo-600 animate-spin" />
+                              <p className="text-sm font-bold text-slate-700">AI processing and vector indexing...</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-2">
+                              <UploadCloud className="w-10 h-10 text-slate-400 mb-2" />
+                              <p className="text-sm font-bold text-slate-700">Drag & Drop Corporate Rulebooks</p>
+                              <p className="text-xs text-slate-500">Supports PDF, DOCX, PNG, JPG (Max 50MB)</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Manual Ingestion View */}
+                    {rulesIngestionMode === "manual" && (
+                      <form onSubmit={handleAddRule} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Rule Name</label>
+                            <input type="text" required value={newRuleTitle} onChange={(e) => setNewRuleTitle(e.target.value)} placeholder="e.g. Data Privacy Clause" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Category</label>
+                            <select value={newRuleCategory} onChange={(e) => setNewRuleCategory(e.target.value)} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm">
+                              <option value="Tax">Tax & Finance</option>
+                              <option value="Contract">Contracts & Legal</option>
+                              <option value="Compliance">General Compliance</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Policy Description</label>
+                            <textarea required rows={4} value={newRuleText} onChange={(e) => setNewRuleText(e.target.value)} placeholder="Enter the exact policy text to be indexed..." className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm" />
+                          </div>
+                          <button type="submit" className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-all cursor-pointer shadow-md shadow-indigo-500/20">
+                            Save & Vector Index Rule
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Active Rules List */}
+                    <div className="mt-8 pt-6 border-t border-slate-200">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4">Active Indexed Rules</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {complianceRules.length === 0 ? (
+                          <div className="col-span-full text-center py-6 text-sm text-slate-500">No custom rules added yet.</div>
+                        ) : (
+                          complianceRules.map((rule) => (
+                            <div key={rule.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                              <div className="flex justify-between items-start">
+                                <h5 className="font-bold text-sm text-indigo-700">{rule.title}</h5>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-600 border border-slate-200 uppercase">{rule.category}</span>
+                              </div>
+                              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{rule.rule_text}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
                   </div>
-                </div>
-              </div>
-              </div>
-                </div>
+                )}
               </div>
             </div>
           )}
