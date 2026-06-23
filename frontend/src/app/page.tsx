@@ -433,6 +433,10 @@ export default function Home() {
   };
 
   const uploadFile = async (file: File) => {
+    if (!token && connectionMode === "live") {
+      alert("Please sign in to upload documents.");
+      return;
+    }
     setUploadingFile(file.name);
     setUploadProgress(10);
     
