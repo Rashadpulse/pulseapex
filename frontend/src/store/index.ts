@@ -75,7 +75,7 @@ interface PulseApexStore {
 }
 
 export const usePulseApexStore = create<PulseApexStore>((set) => ({
-  token: typeof window !== 'undefined' ? localStorage.getItem('pulseapex_token') : null,
+  token: null,
   user: null,
   documents: [],
   audits: {},
@@ -85,10 +85,12 @@ export const usePulseApexStore = create<PulseApexStore>((set) => ({
   pendingApprovals: [],
 
   setToken: (token) => {
-    if (token) {
-      localStorage.setItem('pulseapex_token', token);
-    } else {
-      localStorage.removeItem('pulseapex_token');
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('pulseapex_token', token);
+      } else {
+        localStorage.removeItem('pulseapex_token');
+      }
     }
     set({ token });
   },
@@ -104,7 +106,9 @@ export const usePulseApexStore = create<PulseApexStore>((set) => ({
   setSelectedDocId: (selectedDocId) => set({ selectedDocId }),
   setPendingApprovals: (pendingApprovals) => set({ pendingApprovals }),
   logout: () => {
-    localStorage.removeItem('pulseapex_token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('pulseapex_token');
+    }
     set({ token: null, user: null, documents: [], audits: {}, agentLogs: [], activeTab: 'audit', selectedDocId: null });
   }
 }));

@@ -20,7 +20,13 @@ export default function Home() {
   } = usePulseApexStore();
 
   const [hasMounted, setHasMounted] = useState(false);
-  useEffect(() => { setHasMounted(true); }, []);
+  useEffect(() => { 
+    setHasMounted(true);
+    const storedToken = localStorage.getItem('pulseapex_token');
+    if (storedToken && !token) {
+      setToken(storedToken);
+    }
+  }, [token, setToken]);
 
   // Auth States
   const [email, setEmail] = useState("");
@@ -288,10 +294,19 @@ export default function Home() {
         addDocument(data);
         setSelectedDocId(data.id);
         setUploadingFile(null);
+      } else {
+        console.error("Upload failed with status", res.status);
+        setUploadingFile(null);
+        setUploadProgress(0);
+        // If 401, auto logout or alert user
+        if (res.status === 401) {
+          alert("Session expired or invalid. Please log out and log in again.");
+        }
       }
     } catch (e) {
       console.error("Upload failed", e);
       setUploadingFile(null);
+      setUploadProgress(0);
     }
   };
 
