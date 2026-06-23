@@ -21,14 +21,8 @@ async def upload_document(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    # Verify file extension
+    # Extract file extension
     ext = os.path.splitext(file.filename)[1].lower()
-    allowed_exts = [".pdf", ".docx", ".xlsx", ".csv", ".txt"]
-    if ext not in allowed_exts:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type. Supported types are: {', '.join(allowed_exts)}"
-        )
     
     # Save file locally
     org_dir = os.path.join(STORAGE_DIR, str(current_user.organization_id))

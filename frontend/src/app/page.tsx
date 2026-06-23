@@ -1042,8 +1042,8 @@ export default function Home() {
                       className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-400'}`}
                       onClick={() => document.getElementById('file-input')?.click()}>
                       <UploadCloud className={`w-10 h-10 mx-auto mb-3 ${dragActive ? 'text-indigo-500' : 'text-slate-400'}`} />
-                      <p className="text-sm font-semibold text-slate-700">Drag & Drop Files Here (PDF, Images, Word)</p>
-                      <input id="file-input" type="file" className="hidden" accept=".pdf,.docx,.xlsx,.csv,.txt,.png,.jpg,.jpeg" onChange={handleFileInput} />
+                      <p className="text-sm font-semibold text-slate-700">Drag & Drop Files Here (Any Data Type)</p>
+                      <input id="file-input" type="file" className="hidden" onChange={handleFileInput} />
                     </div>
                     <button onClick={() => { const u = documents.find(d => d.status === 'uploaded'); if (u) handleStartAudit(u.id); }}
                       className="mt-4 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-all cursor-pointer shadow-md shadow-indigo-500/20">Start New Audit</button>
