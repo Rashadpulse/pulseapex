@@ -34,6 +34,14 @@ async def lifespan(app: FastAPI):
             try:
                 from sqlalchemy import text
                 await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            except Exception:
+                pass
+                
+            await conn.run_sync(Base.metadata.create_all)
+            
+            try:
+                # Ensure missing columns exist in older database tables (Render deployments)
+                await conn.execute(text("ALTER TABLE audit_findings ADD COLUMN IF NOT EXISTS ai_confidence_score FLOAT;"))
                 
                 # Phase 4: Create Materialized Views for Power BI REST API Integration
                 await conn.execute(text("""
@@ -63,9 +71,7 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 # If the DB doesn't support vector or user lacks privileges, fail silently
                 logger.error(f"Failed to initialize extensions or views: {e}")
-                pass
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database Connection and Materialized Views Successful")
+        logger.info("Database Connection, Migrations, and Materialized Views Successful")
     except Exception as e:
         logger.error(f"Database Connection Failed: {str(e)}")
     yield

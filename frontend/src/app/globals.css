@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f0f9ff;
-  --foreground: #0f172a;
-  --card-bg: rgba(255, 255, 255, 0.75);
-  --card-border: rgba(14, 165, 233, 0.15);
-  --glow-cyan: rgba(14, 165, 233, 0.1);
-  --glow-purple: rgba(37, 99, 235, 0.1);
+  --background: #F8F9FA;
+  --foreground: #1A1D20;
+  --card-bg: #FFFFFF;
+  --card-border: rgba(0, 0, 0, 0.05);
+  --glow-cyan: rgba(79, 70, 229, 0.1);
+  --glow-purple: rgba(67, 56, 202, 0.1);
 }
 
 body {
@@ -16,13 +16,12 @@ body {
   overflow-x: hidden;
 }
 
-/* Glassmorphism utility */
-.glass-panel {
+/* Glassmorphism / Premium Card utility */
+.glass-panel, .premium-card {
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--card-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
 }
 
 /* Glowing animations */

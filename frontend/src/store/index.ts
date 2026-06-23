@@ -80,7 +80,7 @@ export const usePulseApexStore = create<PulseApexStore>((set) => ({
   documents: [],
   audits: {},
   agentLogs: [],
-  activeTab: 'dashboard',
+  activeTab: 'audit',
   selectedDocId: null,
   pendingApprovals: [],
 
@@ -105,6 +105,6 @@ export const usePulseApexStore = create<PulseApexStore>((set) => ({
   setPendingApprovals: (pendingApprovals) => set({ pendingApprovals }),
   logout: () => {
     localStorage.removeItem('pulseapex_token');
-    set({ token: null, user: null, documents: [], audits: {}, agentLogs: [], activeTab: 'dashboard', selectedDocId: null });
+    set({ token: null, user: null, documents: [], audits: {}, agentLogs: [], activeTab: 'audit', selectedDocId: null });
   }
 }));

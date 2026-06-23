@@ -5,7 +5,7 @@ import {
   usePulseApexStore, Document, Audit 
 } from "../store";
 import { 
-  Shield, UploadCloud, Layers, ClipboardCheck, Terminal, BookOpen, 
+  Shield, UploadCloud, Layers, ClipboardCheck, Terminal, BookOpen, FolderOpen, PieChart,
   Settings, User as UserIcon, LogOut, CheckCircle, AlertTriangle, 
   XCircle, Play, Info, ArrowRight, RefreshCw, Check, X, FileText,
   AlertCircle, ShieldAlert, Cpu, Activity
@@ -812,14 +812,10 @@ export default function Home() {
 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1">
-            {[
-              { id: "dashboard", label: "Executive Dashboard", icon: Layers },
-              { id: "upload", label: "Document Upload", icon: UploadCloud },
-              { id: "workspace", label: "Audit Workspace", icon: ClipboardCheck },
-              { id: "hitl", label: "HITL Reviews", icon: ShieldAlert, badge: pendingApprovals.length },
-              { id: "agent-terminal", label: "Live Agents Feed", icon: Terminal, activeGlow: true },
-              { id: "rules", label: "Compliance Rules", icon: BookOpen }
-            ].map((item) => {
+            {( [
+              { id: "audit", label: "Audit & Files", icon: FolderOpen },
+              { id: "overview", label: "Overview", icon: PieChart }
+            ] as any[] ).map((item) => {
               const Icon = item.icon;
               const active = activeTab === item.id;
               return (
@@ -900,126 +896,12 @@ export default function Home() {
 
         {/* Tab-driven panels wrapper */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* TAB 1: EXECUTIVE DASHBOARD */}
-          {activeTab === "dashboard" && (
-            <div className="space-y-6">
-              {/* Headline Welcome Banner */}
-              <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-gradient-to-r from-cyan-950/20 via-transparent to-transparent">
-                <div className="absolute top-0 right-0 w-64 h-full bg-[linear-gradient(to_left,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:16px_16px]" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Welcome to PulseApex Executive Intelligence Center</h3>
-                <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-                  Real-time autonomous auditing is active. The agent network parses uploads, detects compliance discrepancies, and builds security patches. Review highlights below.
-                </p>
-              </div>
 
-              <NativeDashboard token={token} />
-
-              {/* Two Column details: recent docs and system status */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Recent Documents list */}
-                <div className="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-950">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Recent Document Submissions</h4>
-                    <button 
-                      onClick={() => setActiveTab("upload")}
-                      className="text-xs text-sky-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Upload New File
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {documents.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-slate-500">No documents uploaded yet.</div>
-                    ) : (
-                      documents.map((doc) => (
-                        <div key={doc.id} className="p-4 bg-sky-50/45 rounded-xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200">
-                              <FileText className="w-5 h-5 text-slate-600" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-semibold text-slate-700 max-w-[250px] sm:max-w-xs truncate">{doc.filename}</span>
-                              <span className="text-[10px] text-slate-500 uppercase font-bold">{doc.file_type} • {(doc.file_size / 1024).toFixed(1)} KB</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
-                            {/* Document status badge */}
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                              doc.status === "completed" || doc.status === "audited" ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                              doc.status === "paused" ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse' :
-                              doc.status === "parsing" ? 'bg-sky-600/10 text-sky-600 border-cyan-500/20' :
-                              'bg-slate-100 shadow-inner text-slate-600 border-slate-300'
-                            }`}>
-                              {doc.status.toUpperCase()}
-                            </span>
-
-                            {doc.status === "uploaded" && (
-                              <button
-                                onClick={() => handleStartAudit(doc.id)}
-                                className="px-3 py-1.5 bg-cyan-600 hover:bg-sky-600 text-white rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                              >
-                                <Play className="w-3 h-3" />
-                                <span>Audit</span>
-                              </button>
-                            )}
-
-                            {(doc.status === "audited" || doc.status === "completed" || doc.status === "paused") && (
-                              <button
-                                onClick={() => {
-                                  setSelectedDocId(doc.id);
-                                  setActiveTab("workspace");
-                                }}
-                                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 shadow-inner text-slate-700 rounded text-xs font-semibold transition-all cursor-pointer"
-                              >
-                                View Results
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Audit Health Overview panel */}
-                <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">System Security Gauge</h4>
-                    
-                    {/* Visual Radial Gauge simulation */}
-                    <div className="flex flex-col items-center py-6">
-                      <div className="w-36 h-36 rounded-full border-4 border-gray-950 flex items-center justify-center relative shadow-inner bg-sky-50/20">
-                        {/* Glow halo */}
-                        <div className="absolute inset-0 rounded-full border-t-4 border-l-4 border-cyan-500 animate-spin" style={{ animationDuration: '6s' }} />
-                        <div className="flex flex-col items-center">
-                          <span className="text-4xl font-black text-glow-cyan text-sky-600">96.4</span>
-                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-1">Health Index</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-600 text-center leading-relaxed">
-                      Operational threshold active. Standard compliance metrics are satisfied. No unhandled critical errors outside HITL scope.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-950 mt-4 flex items-center justify-between text-xs text-slate-500 font-semibold">
-                    <span>Audit Pipeline: ONLINE</span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping" />
-                      <span>NO BACKLOG</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: UPLOAD CENTER */}
-          {activeTab === "upload" && (
-            <div className="max-w-2xl mx-auto space-y-6">
+          {/* TAB: AUDIT & FILES */}
+          {activeTab === "audit" && (
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1 space-y-6">
+                            <div className="max-w-2xl mx-auto space-y-6">
               <div className="glass-panel p-6 rounded-2xl text-center space-y-4">
                 <h3 className="text-lg font-bold text-slate-800">Upload New Audit Documents</h3>
                 <p className="text-sm text-slate-600">
@@ -1071,11 +953,9 @@ export default function Home() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* TAB 3: AUDIT WORKSPACE */}
-          {activeTab === "workspace" && (
-            <div className="space-y-6">
+                <div className="pt-6 border-t border-slate-200">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">Unified Processing Queue</h3>
+                              <div className="space-y-6">
               {/* Document selection helper */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-950">
                 <div className="flex items-center gap-3 overflow-x-auto">
@@ -1261,11 +1141,7 @@ export default function Home() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* TAB 4: HITL REVIEWS QUEUE */}
-          {activeTab === "hitl" && (
-            <div className="space-y-6">
+                              <div className="space-y-6">
               <div className="glass-panel p-6 rounded-2xl bg-gradient-to-r from-amber-950/10 via-transparent to-transparent">
                 <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5 text-amber-500" />
@@ -1345,76 +1221,11 @@ export default function Home() {
                 )}
               </div>
             </div>
-          )}
-
-          {/* TAB 5: LIVE AGENT ACTIVITY TERMINAL */}
-          {activeTab === "agent-terminal" && (
-            <div className="space-y-6 max-w-4xl mx-auto">
-              <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-sky-600" />
-                    <span>Agent Stream Orchestration Hub</span>
-                  </h3>
-                  <p className="text-xs text-slate-600">
-                    Watching collaboration between: Data Collector, Data Quality, Reconciliation, Compliance, Root Cause, and Report Agents.
-                  </p>
-                </div>
-                {agentLogs.length > 0 && (
-                  <button
-                    onClick={clearAgentLogs}
-                    className="px-3 py-1.5 bg-sky-50 border border-slate-100 text-slate-600 hover:text-slate-800 rounded text-xs font-semibold cursor-pointer"
-                  >
-                    Clear Terminal Feed
-                  </button>
-                )}
-              </div>
-
-              {/* Terminal Frame */}
-              <div className="bg-[#020204] border border-gray-950 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Header panel */}
-                <div className="bg-[#07070c] px-4 py-2 flex items-center justify-between border-b border-gray-950 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-500/20" />
-                    <span className="w-3 h-3 rounded-full bg-amber-500/20" />
-                    <span className="w-3 h-3 rounded-full bg-emerald-500/20" />
-                  </div>
-                  <span className="font-mono text-[10px] text-gray-600 uppercase">pulseapex_ai_terminal_log.log</span>
-                </div>
-
-                {/* Log list */}
-                <div className="p-6 h-[400px] overflow-y-auto font-mono text-xs space-y-4">
-                  {agentLogs.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-600 text-center space-y-2">
-                      <Terminal className="w-8 h-8 opacity-40 animate-pulse text-sky-600" />
-                      <span className="text-[10px] tracking-wider uppercase font-semibold">Terminal idle. Trigger an audit to view live stream.</span>
-                    </div>
-                  ) : (
-                    agentLogs.map((log, idx) => (
-                      <div key={idx} className="space-y-1 border-l-2 border-cyan-500/35 pl-3">
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          <span className="font-bold text-sky-600">[{log.agent.toUpperCase()}]</span>
-                          <span>{log.timestamp}</span>
-                        </div>
-                        <p className="text-slate-800">{log.message}</p>
-                        {log.thought && (
-                          <div className="p-2 bg-sky-50/40 border border-gray-950 rounded text-slate-500 text-[10px] italic mt-1">
-                            <span className="font-bold text-blue-600/70 not-italic block uppercase text-[8px] tracking-widest mb-0.5">Agent Internal Thoughts:</span>
-                            {log.thought}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                  <div ref={terminalEndRef} />
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* TAB 6: COMPLIANCE RULES */}
-          {activeTab === "rules" && (
-            <div className="space-y-6">
+              <div className="w-full lg:w-96 shrink-0">
+                <div className="sticky top-6">
+                              <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Rule Upload form */}
                 <div className="lg:col-span-1">
@@ -1494,6 +1305,192 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+              </div>
+              </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: OVERVIEW */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+                          <div className="space-y-6">
+              {/* Headline Welcome Banner */}
+              <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-gradient-to-r from-cyan-950/20 via-transparent to-transparent">
+                <div className="absolute top-0 right-0 w-64 h-full bg-[linear-gradient(to_left,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:16px_16px]" />
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Welcome to PulseApex Executive Intelligence Center</h3>
+                <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
+                  Real-time autonomous auditing is active. The agent network parses uploads, detects compliance discrepancies, and builds security patches. Review highlights below.
+                </p>
+              </div>
+
+              <NativeDashboard token={token} />
+
+              {/* Two Column details: recent docs and system status */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Recent Documents list */}
+                <div className="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
+                  <div className="flex justify-between items-center pb-3 border-b border-gray-950">
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Recent Document Submissions</h4>
+                    <button 
+                      onClick={() => setActiveTab("upload")}
+                      className="text-xs text-sky-600 font-bold hover:underline cursor-pointer"
+                    >
+                      Upload New File
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {documents.length === 0 ? (
+                      <div className="text-center py-10 text-xs text-slate-500">No documents uploaded yet.</div>
+                    ) : (
+                      documents.map((doc) => (
+                        <div key={doc.id} className="p-4 bg-sky-50/45 rounded-xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200">
+                              <FileText className="w-5 h-5 text-slate-600" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-slate-700 max-w-[250px] sm:max-w-xs truncate">{doc.filename}</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-bold">{doc.file_type} • {(doc.file_size / 1024).toFixed(1)} KB</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
+                            {/* Document status badge */}
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                              doc.status === "completed" || doc.status === "audited" ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                              doc.status === "paused" ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse' :
+                              doc.status === "parsing" ? 'bg-sky-600/10 text-sky-600 border-cyan-500/20' :
+                              'bg-slate-100 shadow-inner text-slate-600 border-slate-300'
+                            }`}>
+                              {doc.status.toUpperCase()}
+                            </span>
+
+                            {doc.status === "uploaded" && (
+                              <button
+                                onClick={() => handleStartAudit(doc.id)}
+                                className="px-3 py-1.5 bg-cyan-600 hover:bg-sky-600 text-white rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                              >
+                                <Play className="w-3 h-3" />
+                                <span>Audit</span>
+                              </button>
+                            )}
+
+                            {(doc.status === "audited" || doc.status === "completed" || doc.status === "paused") && (
+                              <button
+                                onClick={() => {
+                                  setSelectedDocId(doc.id);
+                                  setActiveTab("workspace");
+                                }}
+                                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 shadow-inner text-slate-700 rounded text-xs font-semibold transition-all cursor-pointer"
+                              >
+                                View Results
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Audit Health Overview panel */}
+                <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">System Security Gauge</h4>
+                    
+                    {/* Visual Radial Gauge simulation */}
+                    <div className="flex flex-col items-center py-6">
+                      <div className="w-36 h-36 rounded-full border-4 border-gray-950 flex items-center justify-center relative shadow-inner bg-sky-50/20">
+                        {/* Glow halo */}
+                        <div className="absolute inset-0 rounded-full border-t-4 border-l-4 border-cyan-500 animate-spin" style={{ animationDuration: '6s' }} />
+                        <div className="flex flex-col items-center">
+                          <span className="text-4xl font-black text-glow-cyan text-sky-600">96.4</span>
+                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-1">Health Index</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-600 text-center leading-relaxed">
+                      Operational threshold active. Standard compliance metrics are satisfied. No unhandled critical errors outside HITL scope.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-950 mt-4 flex items-center justify-between text-xs text-slate-500 font-semibold">
+                    <span>Audit Pipeline: ONLINE</span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping" />
+                      <span>NO BACKLOG</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+              <div className="pt-6 border-t border-slate-200">
+                <h3 className="text-xl font-bold text-slate-800 mb-4">Live Agent Intelligence</h3>
+                            <div className="space-y-6 max-w-4xl mx-auto">
+              <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-sky-600" />
+                    <span>Agent Stream Orchestration Hub</span>
+                  </h3>
+                  <p className="text-xs text-slate-600">
+                    Watching collaboration between: Data Collector, Data Quality, Reconciliation, Compliance, Root Cause, and Report Agents.
+                  </p>
+                </div>
+                {agentLogs.length > 0 && (
+                  <button
+                    onClick={clearAgentLogs}
+                    className="px-3 py-1.5 bg-sky-50 border border-slate-100 text-slate-600 hover:text-slate-800 rounded text-xs font-semibold cursor-pointer"
+                  >
+                    Clear Terminal Feed
+                  </button>
+                )}
+              </div>
+
+              {/* Terminal Frame */}
+              <div className="bg-[#020204] border border-gray-950 rounded-2xl shadow-2xl overflow-hidden">
+                {/* Header panel */}
+                <div className="bg-[#07070c] px-4 py-2 flex items-center justify-between border-b border-gray-950 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-500/20" />
+                    <span className="w-3 h-3 rounded-full bg-amber-500/20" />
+                    <span className="w-3 h-3 rounded-full bg-emerald-500/20" />
+                  </div>
+                  <span className="font-mono text-[10px] text-gray-600 uppercase">pulseapex_ai_terminal_log.log</span>
+                </div>
+
+                {/* Log list */}
+                <div className="p-6 h-[400px] overflow-y-auto font-mono text-xs space-y-4">
+                  {agentLogs.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-600 text-center space-y-2">
+                      <Terminal className="w-8 h-8 opacity-40 animate-pulse text-sky-600" />
+                      <span className="text-[10px] tracking-wider uppercase font-semibold">Terminal idle. Trigger an audit to view live stream.</span>
+                    </div>
+                  ) : (
+                    agentLogs.map((log, idx) => (
+                      <div key={idx} className="space-y-1 border-l-2 border-cyan-500/35 pl-3">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <span className="font-bold text-sky-600">[{log.agent.toUpperCase()}]</span>
+                          <span>{log.timestamp}</span>
+                        </div>
+                        <p className="text-slate-800">{log.message}</p>
+                        {log.thought && (
+                          <div className="p-2 bg-sky-50/40 border border-gray-950 rounded text-slate-500 text-[10px] italic mt-1">
+                            <span className="font-bold text-blue-600/70 not-italic block uppercase text-[8px] tracking-widest mb-0.5">Agent Internal Thoughts:</span>
+                            {log.thought}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                  <div ref={terminalEndRef} />
+                </div>
+              </div>
+            </div>
               </div>
             </div>
           )}

@@ -106,7 +106,7 @@ export default function NativeDashboard({ token }: DashboardProps) {
       </div>
 
       {/* Trend Tracking Chart */}
-      <div className="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200 bg-white/60">
+      <div className="glass-panel p-6">
         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-widest mb-6">Anomaly Distribution by Category</h3>
         <div className="h-64 w-full">
           {loading ? (
