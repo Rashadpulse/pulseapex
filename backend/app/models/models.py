@@ -326,5 +326,5 @@ class HumanCorrectionVector(Base):
     auditor = relationship("User")
 
     __table_args__ = (
-        Index("idx_human_corrections_embedding", "embedding", postgresql_using="hnsw", postgresql_with={"m": 16, "ef_construction": 64}),
+        Index("idx_human_corrections_embedding", "embedding", postgresql_using="hnsw", postgresql_with={"m": 16, "ef_construction": 64}, postgresql_ops={"embedding": "vector_cosine_ops"}),
     )
