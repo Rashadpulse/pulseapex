@@ -30,6 +30,7 @@ export interface AuditFinding {
   status: 'unresolved' | 'approved' | 'rejected' | 'resolved';
   page_number?: number;
   compliance_reference?: string;
+  ai_confidence_score?: number;
 }
 
 export interface Audit {

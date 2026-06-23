@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine
 from app.models.base import Base
-from app.api import auth, documents, audits, hitl, compliance
+from app.api import auth, documents, audits, hitl, compliance, powerbi, internal
 from app.websockets import router as ws_router
 
 @asynccontextmanager
@@ -34,12 +34,38 @@ async def lifespan(app: FastAPI):
             try:
                 from sqlalchemy import text
                 await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
-            except Exception:
+                
+                # Phase 4: Create Materialized Views for Power BI REST API Integration
+                await conn.execute(text("""
+                CREATE MATERIALIZED VIEW IF NOT EXISTS powerbi_audit_summary AS
+                SELECT 
+                    organization_id,
+                    COUNT(id) as total_audits,
+                    AVG(compliance_score) as avg_compliance_score,
+                    SUM(critical_findings_count) as total_critical_findings
+                FROM audits
+                GROUP BY organization_id;
+                """))
+                
+                await conn.execute(text("""
+                CREATE MATERIALIZED VIEW IF NOT EXISTS powerbi_mismatch_findings AS
+                SELECT 
+                    a.organization_id,
+                    f.id as finding_id,
+                    f.severity,
+                    f.category,
+                    f.status,
+                    f.ai_confidence_score
+                FROM audit_findings f
+                JOIN audits a ON f.audit_id = a.id
+                WHERE f.severity IN ('high', 'critical');
+                """))
+            except Exception as e:
                 # If the DB doesn't support vector or user lacks privileges, fail silently
-                # pgvector is pre-installed on Supabase so it should succeed.
+                logger.error(f"Failed to initialize extensions or views: {e}")
                 pass
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database Connection Successful")
+        logger.info("Database Connection and Materialized Views Successful")
     except Exception as e:
         logger.error(f"Database Connection Failed: {str(e)}")
     yield
@@ -83,6 +109,8 @@ app.include_router(documents.router, prefix=f"{settings.API_V1_STR}/documents", 
 app.include_router(audits.router, prefix=f"{settings.API_V1_STR}/audits", tags=["Audit Workspace"])
 app.include_router(hitl.router, prefix=f"{settings.API_V1_STR}/hitl", tags=["Human-in-the-Loop"])
 app.include_router(compliance.router, prefix=f"{settings.API_V1_STR}/compliance", tags=["Compliance Policies"])
+app.include_router(powerbi.router, prefix=f"{settings.API_V1_STR}/powerbi", tags=["Power BI Export"])
+app.include_router(internal.router, prefix=f"{settings.API_V1_STR}/internal", tags=["Internal Cron"])
 app.include_router(ws_router, tags=["WebSockets"])
 
 @app.get("/")

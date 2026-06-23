@@ -155,6 +155,9 @@ class Audit(Base):
     document = relationship("Document", back_populates="audits")
     organization = relationship("Organization", back_populates="audits")
     findings = relationship("AuditFinding", back_populates="audit", cascade="all, delete-orphan")
+    data_quality_reports = relationship("DataQualityReport", back_populates="audit", cascade="all, delete-orphan")
+    mismatch_reports = relationship("MismatchReport", back_populates="audit", cascade="all, delete-orphan")
+    compliance_violations = relationship("ComplianceViolation", back_populates="audit", cascade="all, delete-orphan")
     agent_runs = relationship("AgentRun", back_populates="audit", cascade="all, delete-orphan")
     approval_requests = relationship("ApprovalRequest", back_populates="audit", cascade="all, delete-orphan")
 
@@ -172,6 +175,7 @@ class AuditFinding(Base):
     status = Column(String(50), default="unresolved")  # unresolved, approved, rejected, resolved
     page_number = Column(Integer, nullable=True)
     compliance_reference = Column(String(255), nullable=True)  # reference to policy rule
+    ai_confidence_score = Column(Float, nullable=True)  # e.g., 85.5
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -258,3 +262,69 @@ class Session(Base):
 
     # Relationships
     user = relationship("User", back_populates="sessions")
+
+
+class DataQualityReport(Base):
+    __tablename__ = "data_quality_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    audit_id = Column(Integer, ForeignKey("audits.id", ondelete="CASCADE"), nullable=False)
+    issue_type = Column(String(100), nullable=False)  # null_value, duplicate, missing_field, invalid_format
+    table_or_file = Column(String(255), nullable=True)
+    row_identifier = Column(String(255), nullable=True)
+    description = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    audit = relationship("Audit", back_populates="data_quality_reports")
+
+
+class MismatchReport(Base):
+    __tablename__ = "mismatch_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    audit_id = Column(Integer, ForeignKey("audits.id", ondelete="CASCADE"), nullable=False)
+    mismatch_type = Column(String(100), nullable=False)  # erp_vs_invoice, invoice_vs_payment, vendor_vs_po, bank_vs_ledger
+    source_a_value = Column(String(255), nullable=True)
+    source_b_value = Column(String(255), nullable=True)
+    description = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    audit = relationship("Audit", back_populates="mismatch_reports")
+
+
+class ComplianceViolation(Base):
+    __tablename__ = "compliance_violations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    audit_id = Column(Integer, ForeignKey("audits.id", ondelete="CASCADE"), nullable=False)
+    rule_id = Column(Integer, ForeignKey("compliance_rules.id", ondelete="SET NULL"), nullable=True)
+    violation_type = Column(String(100), nullable=False)  # gst_rule, internal_control, audit_policy
+    description = Column(Text, nullable=False)
+    severity = Column(String(50), default="high")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    audit = relationship("Audit", back_populates="compliance_violations")
+    rule = relationship("ComplianceRule")
+
+
+class HumanCorrectionVector(Base):
+    __tablename__ = "human_corrections_vector"
+
+    id = Column(Integer, primary_key=True, index=True)
+    original_anomaly = Column(Text, nullable=False)
+    human_correction = Column(Text, nullable=False)
+    auditor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    confidence_at_time = Column(Float, nullable=True)
+    # The embedding vector (e.g., 1536 dimensions for OpenAI text-embedding-3-small)
+    embedding = Column(Vector(1536), nullable=True) 
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    auditor = relationship("User")
+
+    __table_args__ = (
+        Index("idx_human_corrections_embedding", "embedding", postgresql_using="hnsw", postgresql_with={"m": 16, "ef_construction": 64}),
+    )

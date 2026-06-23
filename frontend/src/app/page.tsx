@@ -11,6 +11,7 @@ import {
   AlertCircle, ShieldAlert, Cpu, Activity
 } from "lucide-react";
 import { API_BASE_URL, WS_BASE_URL } from "../config/api";
+import NativeDashboard from "../components/Dashboard";
 
 export default function Home() {
   const {
@@ -107,7 +108,8 @@ export default function Home() {
             proposed_value: "Requires board resolution ID and dual countersign (CEO + CFO).",
             status: "unresolved",
             page_number: 1,
-            compliance_reference: "Rule SOC2-Sec4"
+            compliance_reference: "Rule SOC2-Sec4",
+            ai_confidence_score: 88.5
           },
           {
             id: 203,
@@ -643,10 +645,10 @@ export default function Home() {
       <div className="flex-1 flex items-center justify-center p-6 bg-[#030305] relative overflow-hidden">
         {/* Decorative Grid and Ambient Glows */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px]" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-sky-600/10 blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
 
-        <div className="w-full max-w-md glass-panel p-8 rounded-2xl relative z-10 border border-gray-800 shadow-2xl">
+        <div className="w-full max-w-md glass-panel p-8 rounded-2xl relative z-10 border border-slate-200 shadow-2xl">
           <div className="flex items-center gap-3 justify-center mb-8">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <Shield className="w-6 h-6 text-white" />
@@ -656,16 +658,16 @@ export default function Home() {
             </h1>
           </div>
 
-          <div className="mb-6 flex p-1 bg-gray-950/80 rounded-lg border border-gray-900">
+          <div className="mb-6 flex p-1 bg-sky-50/80 rounded-lg border border-slate-100">
             <button
               onClick={() => setIsRegistering(false)}
-              className={`flex-1 py-2 rounded-md font-medium text-sm transition-all ${!isRegistering ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20' : 'text-gray-400 hover:text-gray-200'}`}
+              className={`flex-1 py-2 rounded-md font-medium text-sm transition-all ${!isRegistering ? 'bg-sky-600/15 text-sky-600 border border-cyan-500/20' : 'text-slate-600 hover:text-slate-800'}`}
             >
               Sign In
             </button>
             <button
               onClick={() => setIsRegistering(true)}
-              className={`flex-1 py-2 rounded-md font-medium text-sm transition-all ${isRegistering ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20' : 'text-gray-400 hover:text-gray-200'}`}
+              className={`flex-1 py-2 rounded-md font-medium text-sm transition-all ${isRegistering ? 'bg-sky-600/15 text-sky-600 border border-cyan-500/20' : 'text-slate-600 hover:text-slate-800'}`}
             >
               Register
             </button>
@@ -675,51 +677,51 @@ export default function Home() {
             {isRegistering && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Full Name</label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Full Name</label>
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="John Doe"
-                    className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-200"
+                    className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Organization Name</label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Organization Name</label>
                   <input
                     type="text"
                     required
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="Acme Corp"
-                    className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-200"
+                    className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Email Address</label>
+              <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Email Address</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="executive@company.com"
-                className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-200"
+                className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Password</label>
+              <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-200"
+                className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
               />
             </div>
 
@@ -731,20 +733,20 @@ export default function Home() {
             )}
 
             {/* Connection Mode Settings inside Auth for developers */}
-            <div className="pt-2 border-t border-gray-900 mt-6 flex flex-col gap-2">
-              <label className="text-[10px] font-semibold uppercase text-gray-500 tracking-wider">System Integration Mode</label>
+            <div className="pt-2 border-t border-slate-100 mt-6 flex flex-col gap-2">
+              <label className="text-[10px] font-semibold uppercase text-slate-500 tracking-wider">System Integration Mode</label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setConnectionMode("mock")}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold border ${connectionMode === "mock" ? 'bg-cyan-950/40 text-cyan-400 border-cyan-500/40' : 'bg-transparent text-gray-500 border-gray-800 hover:text-gray-300'}`}
+                  className={`flex-1 py-1 rounded text-[10px] font-bold border ${connectionMode === "mock" ? 'bg-cyan-950/40 text-sky-600 border-cyan-500/40' : 'bg-transparent text-slate-500 border-slate-200 hover:text-slate-700'}`}
                 >
                   LOCAL SANDBOX (FREE)
                 </button>
                 <button
                   type="button"
                   onClick={() => setConnectionMode("live")}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold border ${connectionMode === "live" ? 'bg-purple-950/40 text-purple-400 border-purple-500/40' : 'bg-transparent text-gray-500 border-gray-800 hover:text-gray-300'}`}
+                  className={`flex-1 py-1 rounded text-[10px] font-bold border ${connectionMode === "live" ? 'bg-purple-950/40 text-blue-600 border-purple-500/40' : 'bg-transparent text-slate-500 border-slate-200 hover:text-slate-700'}`}
                 >
                   LIVE API (REQUIRES API/DB)
                 </button>
@@ -756,14 +758,14 @@ export default function Home() {
                     value={API_BASE_URL} readOnly
                     
                     placeholder="API Endpoint"
-                    className="w-full px-2 py-1 bg-gray-950 border border-gray-900 rounded text-[10px] text-gray-400 focus:outline-none"
+                    className="w-full px-2 py-1 bg-sky-50 border border-slate-100 rounded text-[10px] text-slate-600 focus:outline-none"
                   />
                   <input
                     type="text"
                     value={WS_BASE_URL} readOnly
                     
                     placeholder="WS Endpoint"
-                    className="w-full px-2 py-1 bg-gray-950 border border-gray-900 rounded text-[10px] text-gray-400 focus:outline-none"
+                    className="w-full px-2 py-1 bg-sky-50 border border-slate-100 rounded text-[10px] text-slate-600 focus:outline-none"
                   />
                 </div>
               )}
@@ -791,7 +793,7 @@ export default function Home() {
   return (
     <div className="flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-[#040407]">
       {/* 1. SIDEBAR NAVIGATION */}
-      <aside className="w-full md:w-64 bg-[#0a0a12] border-b md:border-b-0 md:border-r border-gray-900 flex flex-col justify-between flex-shrink-0 z-20">
+      <aside className="w-full md:w-64 bg-[#0a0a12] border-b md:border-b-0 md:border-r border-slate-100 flex flex-col justify-between flex-shrink-0 z-20">
         <div>
           {/* Logo Brand */}
           <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-950">
@@ -802,7 +804,7 @@ export default function Home() {
               <span className="text-sm font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
                 PULSEAPEX AI
               </span>
-              <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-bold">
+              <span className="text-[9px] uppercase tracking-widest text-sky-600 font-bold">
                 Agentic Auditor
               </span>
             </div>
@@ -831,16 +833,16 @@ export default function Home() {
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                     active 
-                      ? 'bg-gradient-to-r from-cyan-950/45 to-transparent border-l-2 border-cyan-500 text-cyan-400' 
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900/40'
+                      ? 'bg-gradient-to-r from-cyan-950/45 to-transparent border-l-2 border-cyan-500 text-sky-600' 
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-white/40'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${active ? 'text-cyan-400' : 'text-gray-400'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-sky-600' : 'text-slate-600'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/25">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/25">
                       {item.badge}
                     </span>
                   )}
@@ -854,20 +856,20 @@ export default function Home() {
         </div>
 
         {/* User profile footer */}
-        <div className="p-4 border-t border-gray-950 bg-gray-950/20">
+        <div className="p-4 border-t border-gray-950 bg-sky-50/20">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
-              <UserIcon className="w-4 h-4 text-gray-300" />
+            <div className="w-9 h-9 rounded-full bg-slate-100 shadow-inner flex items-center justify-center border border-slate-300">
+              <UserIcon className="w-4 h-4 text-slate-700" />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-gray-200 truncate">{user?.full_name || "Guest Auditor"}</span>
-              <span className="text-[10px] text-gray-500 truncate">{user?.email || "sandbox-session"}</span>
+              <span className="text-xs font-semibold text-slate-800 truncate">{user?.full_name || "Guest Auditor"}</span>
+              <span className="text-[10px] text-slate-500 truncate">{user?.email || "sandbox-session"}</span>
             </div>
           </div>
 
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2 justify-center py-2 rounded bg-gray-950 border border-gray-900 hover:bg-red-950/10 hover:border-red-500/20 hover:text-red-400 text-xs text-gray-400 transition-all cursor-pointer"
+            className="w-full flex items-center gap-2 justify-center py-2 rounded bg-sky-50 border border-slate-100 hover:bg-red-950/10 hover:border-red-500/20 hover:text-red-400 text-xs text-slate-600 transition-all cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Terminate Session</span>
@@ -880,16 +882,16 @@ export default function Home() {
         {/* Top Header */}
         <header className="h-16 border-b border-gray-950 px-6 flex items-center justify-between bg-[#07070d]/60 backdrop-blur-md">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-gray-200 uppercase tracking-wider">
+            <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wider">
               {activeTab.replace("-", " ")}
             </h2>
           </div>
 
           {/* Connection status tag */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-gray-950 px-3 py-1.5 rounded-full border border-gray-900 text-xs">
+            <div className="flex items-center gap-2 bg-sky-50 px-3 py-1.5 rounded-full border border-slate-100 text-xs">
               <Activity className={`w-3.5 h-3.5 ${connectionMode === 'mock' || wsConnected ? 'text-emerald-500' : 'text-amber-500'}`} />
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
+              <span className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider">
                 {connectionMode === "mock" ? "Local Sandbox (Offline)" : `Live API: ${wsConnected ? 'Connected' : 'Reconnecting'}`}
               </span>
             </div>
@@ -904,44 +906,23 @@ export default function Home() {
               {/* Headline Welcome Banner */}
               <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-gradient-to-r from-cyan-950/20 via-transparent to-transparent">
                 <div className="absolute top-0 right-0 w-64 h-full bg-[linear-gradient(to_left,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:16px_16px]" />
-                <h3 className="text-xl font-bold text-gray-100 mb-2">Welcome to PulseApex Executive Intelligence Center</h3>
-                <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Welcome to PulseApex Executive Intelligence Center</h3>
+                <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
                   Real-time autonomous auditing is active. The agent network parses uploads, detects compliance discrepancies, and builds security patches. Review highlights below.
                 </p>
               </div>
 
-              {/* Stat Metric Cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label: "Documents Processed", value: stats.docsProcessed, icon: FileText, color: "text-cyan-400", bg: "from-cyan-500/10" },
-                  { label: "Average Compliance Score", value: `${stats.complianceScore}%`, icon: Shield, color: "text-emerald-400", bg: "from-emerald-500/10" },
-                  { label: "Active Audit Pipeline", value: stats.activeAudits, icon: RefreshCw, color: "text-purple-400", bg: "from-purple-500/10" },
-                  { label: "Critical Findings Block", value: stats.criticalFindings, icon: AlertTriangle, color: "text-red-400", bg: "from-red-500/10" }
-                ].map((stat, idx) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div key={idx} className="glass-panel p-5 rounded-2xl flex items-center justify-between relative overflow-hidden">
-                      <div className="space-y-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{stat.label}</span>
-                        <div className="text-3xl font-extrabold text-gray-100 tracking-tight">{stat.value}</div>
-                      </div>
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${stat.bg} to-transparent flex items-center justify-center border border-gray-800`}>
-                        <Icon className={`w-6 h-6 ${stat.color}`} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <NativeDashboard token={token} />
 
               {/* Two Column details: recent docs and system status */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Documents list */}
                 <div className="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
                   <div className="flex justify-between items-center pb-3 border-b border-gray-950">
-                    <h4 className="font-bold text-gray-200 text-sm uppercase tracking-wider">Recent Document Submissions</h4>
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Recent Document Submissions</h4>
                     <button 
                       onClick={() => setActiveTab("upload")}
-                      className="text-xs text-cyan-400 font-bold hover:underline cursor-pointer"
+                      className="text-xs text-sky-600 font-bold hover:underline cursor-pointer"
                     >
                       Upload New File
                     </button>
@@ -949,27 +930,27 @@ export default function Home() {
 
                   <div className="space-y-2">
                     {documents.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-gray-500">No documents uploaded yet.</div>
+                      <div className="text-center py-10 text-xs text-slate-500">No documents uploaded yet.</div>
                     ) : (
                       documents.map((doc) => (
-                        <div key={doc.id} className="p-4 bg-gray-950/45 rounded-xl border border-gray-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div key={doc.id} className="p-4 bg-sky-50/45 rounded-xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded bg-gray-900 flex items-center justify-center border border-gray-800">
-                              <FileText className="w-5 h-5 text-gray-400" />
+                            <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200">
+                              <FileText className="w-5 h-5 text-slate-600" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-sm font-semibold text-gray-300 max-w-[250px] sm:max-w-xs truncate">{doc.filename}</span>
-                              <span className="text-[10px] text-gray-500 uppercase font-bold">{doc.file_type} • {(doc.file_size / 1024).toFixed(1)} KB</span>
+                              <span className="text-sm font-semibold text-slate-700 max-w-[250px] sm:max-w-xs truncate">{doc.filename}</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-bold">{doc.file_type} • {(doc.file_size / 1024).toFixed(1)} KB</span>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
                             {/* Document status badge */}
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                              doc.status === "completed" || doc.status === "audited" ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              doc.status === "paused" ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse' :
-                              doc.status === "parsing" ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
-                              'bg-gray-800 text-gray-400 border-gray-700'
+                              doc.status === "completed" || doc.status === "audited" ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                              doc.status === "paused" ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse' :
+                              doc.status === "parsing" ? 'bg-sky-600/10 text-sky-600 border-cyan-500/20' :
+                              'bg-slate-100 shadow-inner text-slate-600 border-slate-300'
                             }`}>
                               {doc.status.toUpperCase()}
                             </span>
@@ -977,7 +958,7 @@ export default function Home() {
                             {doc.status === "uploaded" && (
                               <button
                                 onClick={() => handleStartAudit(doc.id)}
-                                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                                className="px-3 py-1.5 bg-cyan-600 hover:bg-sky-600 text-white rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                               >
                                 <Play className="w-3 h-3" />
                                 <span>Audit</span>
@@ -990,7 +971,7 @@ export default function Home() {
                                   setSelectedDocId(doc.id);
                                   setActiveTab("workspace");
                                 }}
-                                className="px-3 py-1.5 bg-gray-900 border border-gray-800 hover:bg-gray-800 text-gray-300 rounded text-xs font-semibold transition-all cursor-pointer"
+                                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 shadow-inner text-slate-700 rounded text-xs font-semibold transition-all cursor-pointer"
                               >
                                 View Results
                               </button>
@@ -1005,26 +986,26 @@ export default function Home() {
                 {/* Audit Health Overview panel */}
                 <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between">
                   <div className="space-y-4">
-                    <h4 className="font-bold text-gray-200 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">System Security Gauge</h4>
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">System Security Gauge</h4>
                     
                     {/* Visual Radial Gauge simulation */}
                     <div className="flex flex-col items-center py-6">
-                      <div className="w-36 h-36 rounded-full border-4 border-gray-950 flex items-center justify-center relative shadow-inner bg-gray-950/20">
+                      <div className="w-36 h-36 rounded-full border-4 border-gray-950 flex items-center justify-center relative shadow-inner bg-sky-50/20">
                         {/* Glow halo */}
                         <div className="absolute inset-0 rounded-full border-t-4 border-l-4 border-cyan-500 animate-spin" style={{ animationDuration: '6s' }} />
                         <div className="flex flex-col items-center">
-                          <span className="text-4xl font-black text-glow-cyan text-cyan-400">96.4</span>
-                          <span className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mt-1">Health Index</span>
+                          <span className="text-4xl font-black text-glow-cyan text-sky-600">96.4</span>
+                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-1">Health Index</span>
                         </div>
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-400 text-center leading-relaxed">
+                    <p className="text-xs text-slate-600 text-center leading-relaxed">
                       Operational threshold active. Standard compliance metrics are satisfied. No unhandled critical errors outside HITL scope.
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-950 mt-4 flex items-center justify-between text-xs text-gray-500 font-semibold">
+                  <div className="pt-4 border-t border-gray-950 mt-4 flex items-center justify-between text-xs text-slate-500 font-semibold">
                     <span>Audit Pipeline: ONLINE</span>
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping" />
@@ -1040,8 +1021,8 @@ export default function Home() {
           {activeTab === "upload" && (
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="glass-panel p-6 rounded-2xl text-center space-y-4">
-                <h3 className="text-lg font-bold text-gray-200">Upload New Audit Documents</h3>
-                <p className="text-sm text-gray-400">
+                <h3 className="text-lg font-bold text-slate-800">Upload New Audit Documents</h3>
+                <p className="text-sm text-slate-600">
                   Select corporate agreements, legal contracts, CSV transactions, or financial Excel spreadsheets. Supported file types: PDF, DOCX, XLSX, CSV, TXT (Maximum size 25MB).
                 </p>
               </div>
@@ -1053,16 +1034,16 @@ export default function Home() {
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
                 className={`glass-panel p-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 transition-all ${
-                  dragActive ? 'border-cyan-500 bg-cyan-950/10' : 'border-gray-800 hover:border-gray-700'
+                  dragActive ? 'border-cyan-500 bg-cyan-950/10' : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
-                <div className="w-16 h-16 rounded-full bg-gray-950 flex items-center justify-center border border-gray-900 shadow-md">
-                  <UploadCloud className="w-8 h-8 text-cyan-400" />
+                <div className="w-16 h-16 rounded-full bg-sky-50 flex items-center justify-center border border-slate-100 shadow-md">
+                  <UploadCloud className="w-8 h-8 text-sky-600" />
                 </div>
                 
                 <div className="text-center space-y-1">
-                  <span className="text-sm font-semibold text-gray-300 block">Drag & Drop file here, or</span>
-                  <label className="text-xs text-cyan-400 font-bold hover:underline cursor-pointer block mt-1">
+                  <span className="text-sm font-semibold text-slate-700 block">Drag & Drop file here, or</span>
+                  <label className="text-xs text-sky-600 font-bold hover:underline cursor-pointer block mt-1">
                     browse from directories
                     <input 
                       type="file" 
@@ -1078,12 +1059,12 @@ export default function Home() {
               {uploadingFile && (
                 <div className="glass-panel p-5 rounded-2xl space-y-3 animate-pulse">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-gray-300">Uploading: {uploadingFile}</span>
-                    <span className="font-bold text-cyan-400">{uploadProgress}%</span>
+                    <span className="font-semibold text-slate-700">Uploading: {uploadingFile}</span>
+                    <span className="font-bold text-sky-600">{uploadProgress}%</span>
                   </div>
-                  <div className="w-full h-1.5 bg-gray-950 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-sky-50 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-cyan-500 rounded-full transition-all duration-300"
+                      className="h-full bg-sky-600 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -1104,8 +1085,8 @@ export default function Home() {
                       onClick={() => setSelectedDocId(d.id)}
                       className={`px-4 py-2 rounded-lg text-xs font-semibold border flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
                         selectedDocId === d.id 
-                          ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/40' 
-                          : 'bg-transparent text-gray-500 border-gray-900 hover:text-gray-300'
+                          ? 'bg-cyan-950/30 text-sky-600 border-cyan-500/40' 
+                          : 'bg-transparent text-slate-500 border-slate-100 hover:text-slate-700'
                       }`}
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -1121,7 +1102,7 @@ export default function Home() {
                         fetchAuditForDoc(selectedDocId);
                       }
                     }}
-                    className="px-3 py-1.5 bg-gray-950 border border-gray-900 hover:border-gray-800 text-gray-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                    className="px-3 py-1.5 bg-sky-50 border border-slate-100 hover:border-slate-200 text-slate-700 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Sync Findings</span>
@@ -1130,44 +1111,44 @@ export default function Home() {
               </div>
 
               {!selectedDoc ? (
-                <div className="text-center py-20 text-xs text-gray-500">Please select a document or upload one to inspect the workspace.</div>
+                <div className="text-center py-20 text-xs text-slate-500">Please select a document or upload one to inspect the workspace.</div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left Column: Metadata & Analysis timeline */}
                   <div className="space-y-6 lg:col-span-1">
                     {/* General Metadata Panel */}
                     <div className="glass-panel p-5 rounded-2xl space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Document Insights</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Document Insights</h4>
                       
                       <div className="space-y-3 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Filename:</span>
-                          <span className="text-gray-300 truncate max-w-[180px] font-medium">{selectedDoc.filename}</span>
+                          <span className="text-slate-500">Filename:</span>
+                          <span className="text-slate-700 truncate max-w-[180px] font-medium">{selectedDoc.filename}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Formats:</span>
-                          <span className="text-gray-300 font-bold uppercase">{selectedDoc.file_type}</span>
+                          <span className="text-slate-500">Formats:</span>
+                          <span className="text-slate-700 font-bold uppercase">{selectedDoc.file_type}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Upload Date:</span>
-                          <span className="text-gray-400">{new Date(selectedDoc.created_at).toLocaleDateString()}</span>
+                          <span className="text-slate-500">Upload Date:</span>
+                          <span className="text-slate-600">{new Date(selectedDoc.created_at).toLocaleDateString()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Verification Status:</span>
-                          <span className="text-cyan-400 font-bold uppercase">{selectedDoc.status}</span>
+                          <span className="text-slate-500">Verification Status:</span>
+                          <span className="text-sky-600 font-bold uppercase">{selectedDoc.status}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Gauge score card */}
                     <div className="glass-panel p-5 rounded-2xl space-y-4 text-center">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Compliance Integrity Index</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Compliance Integrity Index</h4>
                       
                       <div className="py-2">
-                        <div className="text-5xl font-black text-glow-cyan text-cyan-400">
+                        <div className="text-5xl font-black text-glow-cyan text-sky-600">
                           {selectedAudit ? `${selectedAudit.compliance_score}%` : "100%"}
                         </div>
-                        <span className="text-[10px] uppercase text-gray-500 tracking-wider font-bold mt-2 block">
+                        <span className="text-[10px] uppercase text-slate-500 tracking-wider font-bold mt-2 block">
                           Current Score Rating
                         </span>
                       </div>
@@ -1175,26 +1156,48 @@ export default function Home() {
 
                     {/* Agent reasoning timeline */}
                     <div className="glass-panel p-5 rounded-2xl space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Agent Reasoning Log</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Agent Reasoning Log</h4>
                       
-                      <div className="space-y-4 relative pl-4 border-l border-gray-900 text-xs">
+                      <div className="space-y-4 relative pl-4 border-l border-slate-100 text-xs">
                         <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-cyan-400" />
-                          <div className="font-semibold text-gray-300">Parser Agent</div>
-                          <p className="text-gray-500 mt-1">Extracted document structures and metadata matrices successfully.</p>
+                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
+                          <div className="font-semibold text-slate-700">Data Collector Agent</div>
+                          <p className="text-slate-500 mt-1">Extracted document structures and metadata matrices successfully.</p>
                         </div>
+
                         <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-purple-400" />
-                          <div className="font-semibold text-gray-300">Compliance Auditor</div>
-                          <p className="text-gray-500 mt-1">Cross-referenced content streams against active regulatory models.</p>
+                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
+                          <div className="font-semibold text-slate-700">Data Quality Agent</div>
+                          <p className="text-slate-500 mt-1">Validated structure, checked for missing fields and format compliance.</p>
                         </div>
+
                         <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                          <div className="font-semibold text-gray-300">Verification Agent</div>
-                          <p className="text-gray-500 mt-1">
-                            {selectedDoc.status === 'paused' ? 'Violations identified. Raised pipeline locks.' : 'Completed verification.'}
+                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
+                          <div className="font-semibold text-slate-700">Reconciliation Agent</div>
+                          <p className="text-slate-500 mt-1">Matched ERP values with extracted invoice records securely.</p>
+                        </div>
+
+                        <div className="relative">
+                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
+                          <div className="font-semibold text-slate-700">Compliance Agent</div>
+                          <p className="text-slate-500 mt-1">Validated findings against GST, SOC2, and Internal Guidelines.</p>
+                        </div>
+
+                        <div className="relative">
+                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                          <div className="font-semibold text-slate-700">Root Cause Agent</div>
+                          <p className="text-slate-500 mt-1">
+                            {selectedDoc.status === 'paused' ? 'Violations identified with < 90% confidence. Raised pipeline locks for Human-in-the-Loop review.' : 'Analyzed root causes and finalized confidence scoring.'}
                           </p>
                         </div>
+
+                        {selectedDoc.status === 'audited' && (
+                          <div className="relative">
+                            <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-green-400" />
+                            <div className="font-semibold text-slate-700">Report Agent</div>
+                            <p className="text-slate-500 mt-1">Generated final Materialized Views for Power BI REST ingestion.</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1203,48 +1206,48 @@ export default function Home() {
                   <div className="lg:col-span-2 space-y-6">
                     {/* Findings list */}
                     <div className="glass-panel p-6 rounded-2xl space-y-4">
-                      <h4 className="font-bold text-gray-200 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Discovered Anomalies</h4>
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Discovered Anomalies</h4>
 
                       <div className="space-y-3">
                         {!selectedAudit || selectedAudit.findings.length === 0 ? (
-                          <div className="text-center py-10 text-xs text-gray-500">No discrepancies identified in this document. Good health!</div>
+                          <div className="text-center py-10 text-xs text-slate-500">No discrepancies identified in this document. Good health!</div>
                         ) : (
                           selectedAudit.findings.map((f) => (
-                            <div key={f.id} className="p-4 bg-gray-950/60 border border-gray-900 rounded-xl space-y-3">
+                            <div key={f.id} className="p-4 bg-sky-50/60 border border-slate-100 rounded-xl space-y-3">
                               <div className="flex justify-between items-start">
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
                                       f.severity === 'critical' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                      f.severity === 'high' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                                      'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                      f.severity === 'high' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' :
+                                      'bg-sky-600/10 text-sky-600 border-cyan-500/20'
                                     }`}>
                                       {f.severity.toUpperCase()}
                                     </span>
-                                    <h5 className="font-bold text-sm text-gray-300">{f.title}</h5>
+                                    <h5 className="font-bold text-sm text-slate-700">{f.title}</h5>
                                   </div>
-                                  <p className="text-xs text-gray-400 leading-relaxed">{f.description}</p>
+                                  <p className="text-xs text-slate-600 leading-relaxed">{f.description}</p>
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-gray-900 text-xs">
-                                <div className="p-2 bg-gray-950/40 border border-gray-900 rounded">
-                                  <div className="text-[10px] text-gray-500 font-semibold mb-1 uppercase">Detected Value</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-xs">
+                                <div className="p-2 bg-sky-50/40 border border-slate-100 rounded">
+                                  <div className="text-[10px] text-slate-500 font-semibold mb-1 uppercase">Detected Value</div>
                                   <span className="font-mono text-red-400">{f.original_value || "N/A"}</span>
                                 </div>
-                                <div className="p-2 bg-gray-950/40 border border-gray-900 rounded">
-                                  <div className="text-[10px] text-gray-500 font-semibold mb-1 uppercase">AI Proposed Patch</div>
-                                  <span className="font-mono text-emerald-400">{f.proposed_value || "N/A"}</span>
+                                <div className="p-2 bg-sky-50/40 border border-slate-100 rounded">
+                                  <div className="text-[10px] text-slate-500 font-semibold mb-1 uppercase">AI Proposed Patch</div>
+                                  <span className="font-mono text-emerald-600">{f.proposed_value || "N/A"}</span>
                                 </div>
                               </div>
 
-                              <div className="flex justify-between items-center pt-2 text-[10px] font-semibold text-gray-500">
+                              <div className="flex justify-between items-center pt-2 text-[10px] font-semibold text-slate-500">
                                 <span>Page: {f.page_number || "Cover"}</span>
                                 <span>Reference: {f.compliance_reference || "Default Guidelines"}</span>
                                 <span className={`uppercase font-bold ${
-                                  f.status === 'approved' ? 'text-emerald-400' :
+                                  f.status === 'approved' ? 'text-emerald-600' :
                                   f.status === 'rejected' ? 'text-red-400' :
-                                  'text-amber-400'
+                                  'text-amber-600'
                                 }`}>
                                   Status: {f.status}
                                 </span>
@@ -1264,18 +1267,18 @@ export default function Home() {
           {activeTab === "hitl" && (
             <div className="space-y-6">
               <div className="glass-panel p-6 rounded-2xl bg-gradient-to-r from-amber-950/10 via-transparent to-transparent">
-                <h3 className="text-lg font-bold text-gray-200 mb-2 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5 text-amber-500" />
                   <span>Human-In-The-Loop Review Gateway</span>
                 </h3>
-                <p className="text-sm text-gray-400 max-w-2xl">
+                <p className="text-sm text-slate-600 max-w-2xl">
                   The agent network automatically halts pipeline execution when a high-risk policy violation is flagged. Audit logs wait for manual resolution inputs below.
                 </p>
               </div>
 
               <div className="space-y-4">
                 {pendingApprovals.length === 0 ? (
-                  <div className="glass-panel p-10 rounded-2xl text-center text-xs text-gray-500">
+                  <div className="glass-panel p-10 rounded-2xl text-center text-xs text-slate-500">
                     <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-3" />
                     <span>No pending approval requests. The audit network has clear runways!</span>
                   </div>
@@ -1284,21 +1287,21 @@ export default function Home() {
                     <div key={req.id} className="glass-panel p-6 rounded-2xl space-y-4">
                       <div className="flex justify-between items-start pb-3 border-b border-gray-950">
                         <div className="space-y-1">
-                          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Audit Frame #{req.audit_id}</span>
-                          <h4 className="font-bold text-base text-gray-300">{req.finding.title}</h4>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Audit Frame #{req.audit_id}</span>
+                          <h4 className="font-bold text-base text-slate-700">{req.finding.title}</h4>
                         </div>
-                        <span className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-400 uppercase tracking-widest animate-pulse">
+                        <span className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-600 uppercase tracking-widest animate-pulse">
                           AWAITING DECISION
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                          <h5 className="text-xs font-bold uppercase text-gray-400">Violation Details</h5>
-                          <p className="text-xs text-gray-500 leading-relaxed bg-gray-950/40 p-3 border border-gray-900 rounded">
+                          <h5 className="text-xs font-bold uppercase text-slate-600">Violation Details</h5>
+                          <p className="text-xs text-slate-500 leading-relaxed bg-sky-50/40 p-3 border border-slate-100 rounded">
                             {req.finding.description}
                           </p>
-                          <div className="flex gap-6 text-[10px] text-gray-500 font-semibold">
+                          <div className="flex gap-6 text-[10px] text-slate-500 font-semibold">
                             <span>Compliance Standard: {req.finding.compliance_reference}</span>
                             <span>Frame Page: {req.finding.page_number}</span>
                           </div>
@@ -1306,14 +1309,14 @@ export default function Home() {
 
                         {/* Proposal Override details */}
                         <div className="space-y-3">
-                          <h5 className="text-xs font-bold uppercase text-gray-400">Split-Screen Patches</h5>
+                          <h5 className="text-xs font-bold uppercase text-slate-600">Split-Screen Patches</h5>
                           <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="p-3 bg-red-950/15 border border-red-500/15 rounded flex flex-col justify-between">
                               <span className="text-[9px] text-red-400/60 font-bold uppercase mb-2">Original Document</span>
                               <span className="font-mono text-red-300 break-words">{req.finding.original_value}</span>
                             </div>
                             <div className="p-3 bg-emerald-950/15 border border-emerald-500/15 rounded flex flex-col justify-between">
-                              <span className="text-[9px] text-emerald-400/60 font-bold uppercase mb-2">AI Proposed Fix</span>
+                              <span className="text-[9px] text-emerald-600/60 font-bold uppercase mb-2">AI Proposed Fix</span>
                               <span className="font-mono text-emerald-300 break-words">{req.finding.proposed_value}</span>
                             </div>
                           </div>
@@ -1349,18 +1352,18 @@ export default function Home() {
             <div className="space-y-6 max-w-4xl mx-auto">
               <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-sky-600" />
                     <span>Agent Stream Orchestration Hub</span>
                   </h3>
-                  <p className="text-xs text-gray-400">
-                    Watching collaboration between: Parser, Auditor, Patch Specialist, and Verification Agents.
+                  <p className="text-xs text-slate-600">
+                    Watching collaboration between: Data Collector, Data Quality, Reconciliation, Compliance, Root Cause, and Report Agents.
                   </p>
                 </div>
                 {agentLogs.length > 0 && (
                   <button
                     onClick={clearAgentLogs}
-                    className="px-3 py-1.5 bg-gray-950 border border-gray-900 text-gray-400 hover:text-gray-200 rounded text-xs font-semibold cursor-pointer"
+                    className="px-3 py-1.5 bg-sky-50 border border-slate-100 text-slate-600 hover:text-slate-800 rounded text-xs font-semibold cursor-pointer"
                   >
                     Clear Terminal Feed
                   </button>
@@ -1383,20 +1386,20 @@ export default function Home() {
                 <div className="p-6 h-[400px] overflow-y-auto font-mono text-xs space-y-4">
                   {agentLogs.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-600 text-center space-y-2">
-                      <Terminal className="w-8 h-8 opacity-40 animate-pulse text-cyan-400" />
+                      <Terminal className="w-8 h-8 opacity-40 animate-pulse text-sky-600" />
                       <span className="text-[10px] tracking-wider uppercase font-semibold">Terminal idle. Trigger an audit to view live stream.</span>
                     </div>
                   ) : (
                     agentLogs.map((log, idx) => (
                       <div key={idx} className="space-y-1 border-l-2 border-cyan-500/35 pl-3">
-                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                          <span className="font-bold text-cyan-400">[{log.agent.toUpperCase()}]</span>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <span className="font-bold text-sky-600">[{log.agent.toUpperCase()}]</span>
                           <span>{log.timestamp}</span>
                         </div>
-                        <p className="text-gray-200">{log.message}</p>
+                        <p className="text-slate-800">{log.message}</p>
                         {log.thought && (
-                          <div className="p-2 bg-gray-950/40 border border-gray-950 rounded text-gray-500 text-[10px] italic mt-1">
-                            <span className="font-bold text-purple-400/70 not-italic block uppercase text-[8px] tracking-widest mb-0.5">Agent Internal Thoughts:</span>
+                          <div className="p-2 bg-sky-50/40 border border-gray-950 rounded text-slate-500 text-[10px] italic mt-1">
+                            <span className="font-bold text-blue-600/70 not-italic block uppercase text-[8px] tracking-widest mb-0.5">Agent Internal Thoughts:</span>
                             {log.thought}
                           </div>
                         )}
@@ -1416,27 +1419,27 @@ export default function Home() {
                 {/* Rule Upload form */}
                 <div className="lg:col-span-1">
                   <div className="glass-panel p-6 rounded-2xl space-y-4">
-                    <h4 className="font-bold text-gray-200 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Ingest Policy Guidelines</h4>
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Ingest Policy Guidelines</h4>
 
                     <form onSubmit={handleAddRule} className="space-y-4">
                       <div>
-                        <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Rule Reference Title</label>
+                        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Rule Reference Title</label>
                         <input
                           type="text"
                           required
                           value={newRuleTitle}
                           onChange={(e) => setNewRuleTitle(e.target.value)}
                           placeholder="e.g., Dual Sign-off Guideline"
-                          className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-200"
+                          className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Auditing Category</label>
+                        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Auditing Category</label>
                         <select
                           value={newRuleCategory}
                           onChange={(e) => setNewRuleCategory(e.target.value)}
-                          className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-300"
+                          className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-700"
                         >
                           <option value="Tax">Tax & Finance</option>
                           <option value="Contract">Contracts & Legal</option>
@@ -1446,20 +1449,20 @@ export default function Home() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold uppercase text-gray-400 mb-1 tracking-wider">Policy Text Content (Chunked for RAG)</label>
+                        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Policy Text Content (Chunked for RAG)</label>
                         <textarea
                           required
                           rows={4}
                           value={newRuleText}
                           onChange={(e) => setNewRuleText(e.target.value)}
                           placeholder="Provide the compliance policy paragraph. The auditor agent will run semantic indexing on this text."
-                          className="w-full px-4 py-2 bg-gray-950 border border-gray-800 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-gray-200"
+                          className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
                         />
                       </div>
 
                       <button
                         type="submit"
-                        className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold text-xs transition-all shadow-md shadow-cyan-500/10 cursor-pointer"
+                        className="w-full py-2.5 bg-cyan-600 hover:bg-sky-600 text-white rounded-lg font-bold text-xs transition-all shadow-md shadow-cyan-500/10 cursor-pointer"
                       >
                         Ingest & Vector Index Rule
                       </button>
@@ -1470,21 +1473,21 @@ export default function Home() {
                 {/* Rules inventory list */}
                 <div className="lg:col-span-2">
                   <div className="glass-panel p-6 rounded-2xl space-y-4">
-                    <h4 className="font-bold text-gray-200 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Active Compliance Guidelines</h4>
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Active Compliance Guidelines</h4>
 
                     <div className="space-y-3">
                       {complianceRules.length === 0 ? (
-                        <div className="text-center py-10 text-xs text-gray-500">No custom compliance rules added yet.</div>
+                        <div className="text-center py-10 text-xs text-slate-500">No custom compliance rules added yet.</div>
                       ) : (
                         complianceRules.map((rule) => (
-                          <div key={rule.id} className="p-4 bg-gray-950/45 border border-gray-900 rounded-xl space-y-2">
+                          <div key={rule.id} className="p-4 bg-sky-50/45 border border-slate-100 rounded-xl space-y-2">
                             <div className="flex justify-between items-start">
-                              <h5 className="font-bold text-sm text-cyan-400">{rule.title}</h5>
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold border bg-gray-900 text-gray-400 border-gray-800 uppercase">
+                              <h5 className="font-bold text-sm text-sky-600">{rule.title}</h5>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold border bg-white text-slate-600 border-slate-200 uppercase">
                                 {rule.category}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-400 leading-relaxed">{rule.rule_text}</p>
+                            <p className="text-xs text-slate-600 leading-relaxed">{rule.rule_text}</p>
                           </div>
                         ))
                       )}

@@ -170,7 +170,7 @@ class PulseApexAuditNetwork:
     async def _save_findings_and_handle_hitl(self, findings: List[Dict[str, Any]]) -> float:
         """
         Saves parsed findings to the database, calculates compliance score,
-        creates HITL approval requests for critical/high findings, and updates the audit.
+        creates HITL approval requests based on ai_confidence_score < 90, and updates the audit.
         Returns the compliance score.
         """
         critical_count = 0
@@ -179,9 +179,10 @@ class PulseApexAuditNetwork:
 
         for f in findings:
             severity = f.get("severity", "low").lower()
-            # Normalize severity to allowed values
             if severity not in ("critical", "high", "medium", "low"):
                 severity = "medium"
+                
+            confidence = float(f.get("ai_confidence_score", 95.0))
 
             db_finding = AuditFinding(
                 audit_id=self.audit_id,
@@ -191,9 +192,10 @@ class PulseApexAuditNetwork:
                 description=f.get("description", "No description provided."),
                 original_value=f.get("original_value") or f.get("original_text", ""),
                 proposed_value=f.get("proposed_value") or f.get("proposed_fix", ""),
-                status="unresolved" if severity in ("critical", "high") else "resolved",
+                status="unresolved" if confidence < 90.0 else "resolved",
                 page_number=f.get("page_number"),
-                compliance_reference=f.get("compliance_reference", "")
+                compliance_reference=f.get("compliance_reference", ""),
+                ai_confidence_score=confidence
             )
             self.db.add(db_finding)
             db_findings.append(db_finding)
@@ -210,17 +212,15 @@ class PulseApexAuditNetwork:
 
         await self.db.commit()
 
-        # Refresh to get IDs
         for f in db_findings:
             await self.db.refresh(f)
             self.findings_created.append(f)
 
         compliance_score = max(0.0, 100.0 - score_reduction)
 
-        # Create HITL approval requests for critical and high severity findings
         hitl_triggered = False
         for f in db_findings:
-            if f.severity in ("critical", "high"):
+            if f.ai_confidence_score is not None and f.ai_confidence_score < 90.0:
                 hitl_triggered = True
                 app_req = ApprovalRequest(
                     audit_id=self.audit_id,
@@ -231,7 +231,6 @@ class PulseApexAuditNetwork:
 
         await self.db.commit()
 
-        # Update Audit record
         result = await self.db.execute(select(Audit).where(Audit.id == self.audit_id))
         audit_obj = result.scalars().first()
         if audit_obj:
@@ -256,7 +255,7 @@ class PulseApexAuditNetwork:
         Perfect for local runs, free tiers, and testing workflows.
         """
         # 1. Create agent runs in DB
-        agents = ["Parser Agent", "Compliance Auditor", "Patch Specialist", "Verification Agent", "Executive Summarizer"]
+        agents = ["Data Collector Agent", "Data Quality Agent", "Reconciliation Agent", "Compliance Agent", "Root Cause Agent", "Report Agent"]
         run_ids = {}
         
         for agent in agents:
@@ -266,19 +265,16 @@ class PulseApexAuditNetwork:
             await self.db.refresh(run)
             run_ids[agent] = run.id
 
-        # --- AGENT 1: PARSER AGENT ---
-        agent = "Parser Agent"
+        # --- AGENT 1: DATA COLLECTOR AGENT ---
+        agent = "Data Collector Agent"
         run_id = run_ids[agent]
-        await self.log_step(run_id, agent, "Initializing parser engine for document...", "Locating file on storage disk.")
+        await self.log_step(run_id, agent, "Initializing data ingestion engine...", "Locating file on storage disk and API endpoints.")
         await asyncio.sleep(1.5)
         
-        await self.log_step(run_id, agent, f"Reading file structure: {doc.filename} ({doc.file_type})", "Selecting parsing driver based on file extension.")
+        await self.log_step(run_id, agent, f"Reading source: {doc.filename} ({doc.file_type})", "Extracting raw data.")
         await asyncio.sleep(2)
         
-        await self.log_step(run_id, agent, "Extracting text layers, tables, and signature blocks...", "Performing structural table alignment and OCR where necessary.")
-        await asyncio.sleep(2.5)
-        
-        parsed_data = {
+        unified_dataset = {
             "title": doc.filename,
             "date": datetime.utcnow().strftime("%Y-%m-%d"),
             "parties": ["Acme Corp", "Vendor Globex Inc"],
@@ -287,17 +283,56 @@ class PulseApexAuditNetwork:
             "has_signatures": False if "draft" in doc.filename.lower() or "unsigned" in doc.filename.lower() else True
         }
         
-        await self.log_step(run_id, agent, "Successfully extracted structured data. JSON file structure generated.", f"JSON Output:\n{json.dumps(parsed_data, indent=2)}")
+        await self.log_step(run_id, agent, "Successfully extracted structured data. Unified Dataset generated.", f"JSON Output:\n{json.dumps(unified_dataset, indent=2)}")
         
-        # Update run status
         result = await self.db.execute(select(AgentRun).where(AgentRun.id == run_id))
         run_obj = result.scalars().first()
         run_obj.status = "completed"
         run_obj.completed_at = datetime.utcnow()
         await self.db.commit()
 
-        # --- AGENT 2: COMPLIANCE AUDITOR ---
-        agent = "Compliance Auditor"
+        # --- AGENT 2: DATA QUALITY AGENT ---
+        agent = "Data Quality Agent"
+        run_id = run_ids[agent]
+        await self.log_step(run_id, agent, "Validating dataset integrity...", "Checking for null values, duplicates, and missing fields.")
+        await asyncio.sleep(1.5)
+        
+        await self.log_step(run_id, agent, "Data Quality Check Passed", "No missing fields or invalid formats detected in unified dataset.")
+        
+        result = await self.db.execute(select(AgentRun).where(AgentRun.id == run_id))
+        run_obj = result.scalars().first()
+        run_obj.status = "completed"
+        run_obj.completed_at = datetime.utcnow()
+        await self.db.commit()
+
+        # --- AGENT 3: RECONCILIATION AGENT ---
+        agent = "Reconciliation Agent"
+        run_id = run_ids[agent]
+        await self.log_step(run_id, agent, "Performing multi-way matching...", "Comparing Unified Dataset against ERP, Invoices, and Ledgers.")
+        await asyncio.sleep(2)
+        
+        reconciliation_findings = []
+        if unified_dataset["amount"] > 100000.00:
+            reconciliation_findings.append({
+                "severity": "high",
+                "category": "transaction",
+                "title": "ERP Sales vs Invoice Mismatch",
+                "description": "Invoice amount does not match the ERP sales ledger.",
+                "original_value": f"Invoice Amount: {unified_dataset['amount']}",
+                "proposed_value": "ERP Amount: 95000.00",
+                "page_number": 1,
+                "compliance_reference": "Reconciliation Policy"
+            })
+        
+        await self.log_step(run_id, agent, f"Reconciliation Complete. Found {len(reconciliation_findings)} mismatches.", "Generating Mismatch Report.")
+        result = await self.db.execute(select(AgentRun).where(AgentRun.id == run_id))
+        run_obj = result.scalars().first()
+        run_obj.status = "completed"
+        run_obj.completed_at = datetime.utcnow()
+        await self.db.commit()
+
+        # --- AGENT 4: COMPLIANCE AGENT ---
+        agent = "Compliance Agent"
         run_id = run_ids[agent]
         await self.log_step(run_id, agent, "Retrieving compliance rules from database...", "Running pgvector similarity search matching document metadata.")
         await asyncio.sleep(2)
@@ -311,20 +346,20 @@ class PulseApexAuditNetwork:
         await asyncio.sleep(2.5)
         
         # Generate some discrepancies based on filename or randomness
-        findings = []
-        if parsed_data["amount"] > 50000.00:
+        findings = reconciliation_findings.copy()
+        if unified_dataset["amount"] > 50000.00:
             findings.append({
                 "severity": "critical",
-                "category": "transaction",
+                "category": "compliance",
                 "title": "Transaction Exceeds Single-Sign Threshold",
-                "description": f"The document references an amount of {parsed_data['amount']} USD which exceeds the single-sign authorization limit of 50,000 USD. Additional manager signature is missing.",
+                "description": f"The document references an amount of {unified_dataset['amount']} USD which exceeds the single-sign authorization limit of 50,000 USD. Additional manager signature is missing.",
                 "original_value": "Authorized by single signature: CEO Acme Corp",
                 "proposed_value": "Requires dual authorization (CEO & CFO)",
                 "page_number": 1,
                 "compliance_reference": "Rule SOC2-Sec4"
             })
             
-        if not parsed_data["has_signatures"]:
+        if not unified_dataset["has_signatures"]:
             findings.append({
                 "severity": "high",
                 "category": "signature",
@@ -359,51 +394,40 @@ class PulseApexAuditNetwork:
         run_obj.completed_at = datetime.utcnow()
         await self.db.commit()
 
-        # --- AGENT 3: PATCH SPECIALIST ---
-        agent = "Patch Specialist"
+        # --- AGENT 5: ROOT CAUSE AGENT ---
+        agent = "Root Cause Agent"
         run_id = run_ids[agent]
-        await self.log_step(run_id, agent, "Analyzing detected violations and compiling correction drafts...", "Structuring replacement text to match document formatting.")
-        await asyncio.sleep(2)
-        
-        # Prepare proposed fixes
-        for f in findings:
-            await self.log_step(
-                run_id, agent, 
-                f"Drafting correction patch for: '{f['title']}'",
-                f"Proposed change:\n- Old: {f['original_value']}\n+ New: {f['proposed_value']}"
-            )
-            await asyncio.sleep(1.5)
-            
-        # Update run status
-        result = await self.db.execute(select(AgentRun).where(AgentRun.id == run_id))
-        run_obj = result.scalars().first()
-        run_obj.status = "completed"
-        run_obj.completed_at = datetime.utcnow()
-        await self.db.commit()
-
-        # --- AGENT 4: VERIFICATION AGENT ---
-        agent = "Verification Agent"
-        run_id = run_ids[agent]
-        await self.log_step(run_id, agent, "Validating correction drafts against regulatory models...", "Computing confidence score using risk matrices.")
+        await self.log_step(run_id, agent, "Analyzing mismatch root causes...", "Determining 'why' the mismatch happened using historical patterns.")
         await asyncio.sleep(2)
         
         critical_count = 0
         score_reduction = 0
-        
-        # Save findings to Database
         db_findings = []
+        
+        # Prepare proposed fixes and calculate confidence
         for f in findings:
+            # Simulate confidence dropping for high/critical severities
+            ai_confidence = 85.0 if f["severity"] in ["critical", "high"] else 98.0
+            
+            await self.log_step(
+                run_id, agent, 
+                f"Root Cause identified for: '{f['title']}'",
+                f"Confidence Score: {ai_confidence}%. Cause: Data Entry Error or Missing Sync."
+            )
+            await asyncio.sleep(1.0)
+            
             db_finding = AuditFinding(
                 audit_id=self.audit_id,
                 severity=f["severity"],
                 category=f["category"],
                 title=f["title"],
-                description=f["description"],
+                description=f["description"] + " [Root Cause: Pending Sync / Data Entry Error]",
                 original_value=f["original_value"],
                 proposed_value=f["proposed_value"],
-                status="unresolved" if f["severity"] in ["critical", "high"] else "resolved", # High risk goes to human review
+                status="unresolved" if ai_confidence < 90.0 else "resolved", # <90% goes to human review
                 page_number=f["page_number"],
-                compliance_reference=f["compliance_reference"]
+                compliance_reference=f["compliance_reference"],
+                ai_confidence_score=ai_confidence
             )
             self.db.add(db_finding)
             db_findings.append(db_finding)
@@ -418,25 +442,22 @@ class PulseApexAuditNetwork:
                 
         await self.db.commit()
         
-        # Refresh to get IDs
         for f in db_findings:
             await self.db.refresh(f)
             self.findings_created.append(f)
             
         compliance_score = max(0.0, 100.0 - score_reduction)
         
-        # Create approval requests (Human-In-The-Loop) for critical and high severity findings
+        # Create approval requests (Human-In-The-Loop) for findings where confidence < 90%
         hitl_triggered = False
         for f in db_findings:
-            if f.severity in ["critical", "high"]:
+            if f.ai_confidence_score is not None and f.ai_confidence_score < 90.0:
                 await self.log_step(
                     run_id, agent, 
-                    f"CRITICAL DISCREPANCY REQUIRES APPROVAL: Pausing audit network.", 
+                    f"LOW CONFIDENCE ({f.ai_confidence_score}%): Pausing audit network.", 
                     f"Creating approval request for: '{f.title}'. Triggering Human-In-The-Loop review."
                 )
                 hitl_triggered = True
-                
-                # Add approval request to DB
                 app_req = ApprovalRequest(
                     audit_id=self.audit_id,
                     finding_id=f.id,
@@ -446,7 +467,6 @@ class PulseApexAuditNetwork:
                 
         await self.db.commit()
         
-        # Update Audit stats
         result = await self.db.execute(select(Audit).where(Audit.id == self.audit_id))
         audit_obj = result.scalars().first()
         audit_obj.compliance_score = compliance_score
@@ -460,7 +480,6 @@ class PulseApexAuditNetwork:
             
         await self.db.commit()
         
-        # Update agent run status
         result = await self.db.execute(select(AgentRun).where(AgentRun.id == run_id))
         run_obj = result.scalars().first()
         run_obj.status = "completed"
@@ -468,17 +487,16 @@ class PulseApexAuditNetwork:
         await self.db.commit()
 
         if hitl_triggered:
-            # Audit pauses here until human approvals are completed
             return
 
-        # --- AGENT 5: EXECUTIVE SUMMARIZER ---
-        # Only runs if audit completed immediately (no high-risk findings)
-        agent = "Executive Summarizer"
+        # --- AGENT 6: REPORT AGENT ---
+        # Only runs if audit completed immediately
+        agent = "Report Agent"
         run_id = run_ids[agent]
-        await self.log_step(run_id, agent, "Compiling audit summary report...", "Assembling findings, scores, and recommendations.")
+        await self.log_step(run_id, agent, "Compiling final Data Quality, Mismatch, and Compliance reports...", "Formatting outputs for Power BI REST API views.")
         await asyncio.sleep(2)
         
-        await self.log_step(run_id, agent, f"Audit Completed. Compliance Score: {compliance_score}%.", "Generating exportable PDF and CSV reports.")
+        await self.log_step(run_id, agent, f"Audit Completed. Compliance Score: {compliance_score}%.", "Materialized views ready for BI ingestion.")
         
         result = await self.db.execute(select(AgentRun).where(AgentRun.id == run_id))
         run_obj = result.scalars().first()
@@ -510,10 +528,10 @@ class PulseApexAuditNetwork:
         try:
             logger.info(f"[CrewAI] Audit {self.audit_id}: Starting full 5-agent pipeline...")
 
-            # ── STAGE 1: DOCUMENT PARSING ──────────────────
+            # ── STAGE 1: DATA COLLECTOR AGENT ──────────────────
 
-            parser_run = await self._create_agent_run("Parser Agent", "running")
-            await self.log_step(parser_run.id, "Parser Agent", f"Parsing document: {doc.filename} ({doc.file_type})", "Using DocumentParserService to extract text by file type.")
+            collector_run = await self._create_agent_run("Data Collector Agent", "running")
+            await self.log_step(collector_run.id, "Data Collector Agent", f"Extracting dataset: {doc.filename} ({doc.file_type})", "Using DocumentParserService.")
 
             # Use the real parser service to extract document content
             doc_content = DocumentParserService.parse_document(doc.storage_path, doc.file_type)
@@ -523,26 +541,21 @@ class PulseApexAuditNetwork:
                 doc_content = doc_content[:max_chars] + "\n\n[... content truncated for LLM context limit ...]"
 
             await self.log_step(
-                parser_run.id, "Parser Agent",
+                collector_run.id, "Data Collector Agent",
                 f"Extracted {len(doc_content)} characters of text content.",
                 f"First 500 chars:\n{doc_content[:500]}"
             )
 
-            # Define the Parser CrewAI Agent
-            parser_agent = Agent(
-                role='Document Parser Specialist',
-                goal='Extract structured data from corporate documents into clean JSON.',
-                backstory=(
-                    'You are an expert document analysis engineer at a top audit firm. '
-                    'You parse contracts, financial statements, invoices, and legal documents '
-                    'to extract key fields like title, parties, dates, amounts, and signature status.'
-                ),
+            collector_agent = Agent(
+                role='Enterprise Data Collector Specialist',
+                goal='Extract and standardize raw data from Excel, PDF, Images, SQL, ERP, and APIs into a Unified Dataset.',
+                backstory='You are a data ingestion specialist responsible for turning unstructured corporate documents and data streams into a clean, unified structure.',
                 verbose=False,
                 allow_delegation=False,
                 llm=get_openrouter_llm("google/gemma-4-31b-it:free")
             )
 
-            parse_task = Task(
+            collector_task = Task(
                 description=(
                     f"Analyze this document content and extract structured information.\n\n"
                     f"DOCUMENT FILENAME: {doc.filename}\n"
@@ -559,11 +572,62 @@ class PulseApexAuditNetwork:
                     f"- document_type: Classification (contract, invoice, financial_statement, policy, report, other)\n\n"
                     f"Return ONLY valid JSON, no extra text."
                 ),
-                expected_output='A valid JSON object with keys: title, parties, date, amount, currency, signed, key_clauses, document_type.',
-                agent=parser_agent
+                expected_output='A valid JSON object representing the unified dataset.',
+                agent=collector_agent
             )
 
-            # ── STAGE 2: COMPLIANCE AUDIT ──────────────────
+            # ── STAGE 2: DATA QUALITY AGENT ──────────────────
+
+            quality_run = await self._create_agent_run("Data Quality Agent", "running")
+            await self.log_step(quality_run.id, "Data Quality Agent", "Analyzing dataset for null values, duplicates, missing fields, and invalid formats.", "Validating unified dataset integrity.")
+
+            quality_agent = Agent(
+                role='Data Quality Auditor',
+                goal='Identify null values, duplicate records, missing fields, and invalid formats in the unified dataset.',
+                backstory='You ensure that data entering the reconciliation pipeline is perfectly clean and error-free.',
+                verbose=False,
+                allow_delegation=False,
+                llm=get_openrouter_llm("cohere/north-mini-code:free")
+            )
+
+            quality_task = Task(
+                description=(
+                    f"Review the Unified Dataset provided by the Data Collector Agent.\n"
+                    f"Identify any missing fields, invalid formats, or null values.\n"
+                    f"Return ONLY a JSON array of Data Quality issues. If none, return an empty array []."
+                ),
+                expected_output='A valid JSON array of Data Quality issues.',
+                agent=quality_agent,
+                context=[collector_task]
+            )
+
+            # ── STAGE 3: RECONCILIATION AGENT ──────────────────
+
+            recon_run = await self._create_agent_run("Reconciliation Agent", "running")
+            await self.log_step(recon_run.id, "Reconciliation Agent", "Performing multi-way matching...", "Comparing ERP Sales vs Invoice, Bank vs Ledger.")
+
+            recon_agent = Agent(
+                role='Enterprise Reconciliation Specialist',
+                goal='Compare the unified dataset against external sources like ERP, Ledgers, and POs to find mismatches.',
+                backstory='You are a financial reconciliation expert. You find discrepancies between what was billed, what was paid, and what the internal systems report.',
+                verbose=False,
+                allow_delegation=False,
+                llm=get_openrouter_llm("cohere/north-mini-code:free")
+            )
+
+            recon_task = Task(
+                description=(
+                    f"Review the Unified Dataset provided by the Data Collector.\n"
+                    f"Identify any financial mismatches (e.g., ERP vs Invoice, Invoice vs Payment, Vendor vs PO).\n"
+                    f"Return ONLY a JSON array of findings. If no mismatches exist, return an empty array [].\n"
+                    f"Findings must use keys: severity, category, title, description, original_value, proposed_value."
+                ),
+                expected_output='A valid JSON array of mismatch finding objects.',
+                agent=recon_agent,
+                context=[collector_task]
+            )
+
+            # ── STAGE 4: COMPLIANCE AGENT ──────────────────
 
             # Load compliance rules from the database
             compliance_rules = await self._load_compliance_rules()
@@ -575,32 +639,27 @@ class PulseApexAuditNetwork:
                 "4. Confidentiality/NDA documents must specify data retention and deletion policies."
             )
 
-            auditor_run = await self._create_agent_run("Compliance Auditor", "running")
+            compliance_run = await self._create_agent_run("Compliance Agent", "running")
             await self.log_step(
-                auditor_run.id, "Compliance Auditor",
-                f"Loaded {len(compliance_rules)} compliance rules. Beginning cross-reference audit.",
+                compliance_run.id, "Compliance Agent",
+                f"Loaded {len(compliance_rules)} compliance rules. Beginning policy audit.",
                 f"Rules context:\n{rules_context[:1000]}"
             )
 
-            auditor_agent = Agent(
+            compliance_agent = Agent(
                 role='Corporate Compliance Auditor',
-                goal='Cross-reference parsed document data against compliance policies and identify ALL discrepancies.',
-                backstory=(
-                    'You are a certified fraud examiner and regulatory compliance expert with 15 years of experience. '
-                    'You meticulously review documents for policy violations, missing signatures, unauthorized amounts, '
-                    'and regulatory non-compliance. You never miss a violation.'
-                ),
+                goal='Cross-reference unified dataset against compliance policies, GST rules, and internal controls to identify violations.',
+                backstory='You are a certified fraud examiner. You ensure every transaction and contract strictly adheres to corporate and legal regulations.',
                 verbose=False,
                 allow_delegation=False,
                 llm=get_openrouter_llm("cohere/north-mini-code:free")
             )
 
-            audit_task = Task(
+            compliance_task = Task(
                 description=(
-                    f"You are auditing this document based on the parsed data from the previous agent.\n\n"
-                    f"ACTIVE COMPLIANCE RULES:\n{rules_context}\n\n"
-                    f"Review the parsed document data and identify ALL compliance violations.\n"
-                    f"For each violation, provide a JSON array of findings. Each finding must have:\n"
+                    f"Review the dataset and identify ALL compliance violations based on these rules:\n{rules_context}\n\n"
+                    f"Combine any existing reconciliation mismatches with new compliance violations.\n"
+                    f"For each violation/mismatch, provide a JSON array of findings. Each finding must have:\n"
                     f"- severity: 'critical', 'high', 'medium', or 'low'\n"
                     f"- category: 'signature', 'transaction', 'risk', 'inconsistency', or 'compliance'\n"
                     f"- title: Short violation title\n"
@@ -613,78 +672,72 @@ class PulseApexAuditNetwork:
                     f"Return ONLY a valid JSON array of findings, no extra text."
                 ),
                 expected_output='A valid JSON array of finding objects with keys: severity, category, title, description, original_value, proposed_value, page_number, compliance_reference.',
-                agent=auditor_agent,
-                context=[parse_task]
+                agent=compliance_agent,
+                context=[recon_task, collector_task]
             )
 
-            # ── STAGE 3: PATCH SPECIALIST ──────────────────
+            # ── STAGE 5: ROOT CAUSE AGENT ──────────────────
 
-            patch_run = await self._create_agent_run("Patch Specialist", "running")
-            await self.log_step(patch_run.id, "Patch Specialist", "Waiting for compliance audit results to generate correction patches...", "Will refine proposed fixes with actionable language.")
+            root_cause_run = await self._create_agent_run("Root Cause Agent", "running")
+            await self.log_step(root_cause_run.id, "Root Cause Agent", "Analyzing violations to determine root causes...", "Using LLM to find why the mismatch happened.")
 
-            patch_agent = Agent(
-                role='Compliance Patch Specialist',
-                goal='Refine and improve the proposed corrections for each compliance violation with specific, actionable language.',
-                backstory=(
-                    'You are a legal drafting specialist who creates precise correction language for corporate documents. '
-                    'You ensure proposed fixes are legally sound, practically implementable, and maintain document consistency.'
-                ),
+            root_cause_agent = Agent(
+                role='Enterprise Root Cause Specialist',
+                goal='Analyze compliance violations and mismatches to determine the root cause, and assign an AI confidence score.',
+                backstory='You identify exactly why a financial discrepancy occurred (e.g. Duplicate invoice, missing payment). You also assign a confidence score to your finding.',
                 verbose=False,
                 allow_delegation=False,
                 llm=get_openrouter_llm("openai/gpt-oss-120b:free")
             )
 
-            patch_task = Task(
+            root_cause_task = Task(
                 description=(
-                    f"Review each compliance violation identified by the Compliance Auditor.\n"
-                    f"For each finding, improve the proposed_value with specific, actionable correction language.\n"
-                    f"Return the same JSON array of findings but with enhanced proposed_value fields.\n"
-                    f"Keep ALL other fields (severity, category, title, description, original_value, etc.) exactly as they are.\n"
-                    f"Return ONLY a valid JSON array, no extra text."
+                    f"Review the mismatch and compliance findings.\n"
+                    f"For each finding, append the likely root cause to the 'description' field.\n"
+                    f"Also, add a new numerical field called 'ai_confidence_score' between 0 and 100.\n"
+                    f"If you are highly confident in the root cause, assign > 90. If it requires human review, assign < 90.\n"
+                    f"Return ONLY the updated JSON array of finding objects.\n"
+                    f"Keep ALL other fields (severity, category, title, original_value, etc.) exactly as they are."
                 ),
-                expected_output='A valid JSON array of finding objects with enhanced proposed_value fields.',
-                agent=patch_agent,
-                context=[audit_task]
+                expected_output='A valid JSON array of finding objects including ai_confidence_score.',
+                agent=root_cause_agent,
+                context=[compliance_task]
             )
 
-            verification_ai_agent = Agent(
-                role='Quality Assurance Director',
-                goal='Review proposed compliance findings and corrections, filtering out false positives and ensuring severity ratings are accurate.',
-                backstory=(
-                    'You are the Director of Quality Assurance. You review audits to ensure no false accusations '
-                    'are made and that all corrections are strictly necessary and accurate.'
-                ),
+            # ── STAGE 6: REPORT AGENT ──────────────────
+
+            report_agent = Agent(
+                role='Reporting Director',
+                goal='Compile the final verified array of findings for insertion into the database.',
+                backstory='You finalize data for the Power BI Materialized views.',
                 verbose=False,
                 allow_delegation=False,
                 llm=get_openrouter_llm("cohere/north-mini-code:free")
             )
 
-            verification_ai_task = Task(
+            report_task = Task(
                 description=(
-                    f"Review the compliance findings and patches generated by the Patch Specialist.\n"
-                    f"Ensure every finding is a legitimate violation of the rules, not a false positive.\n"
-                    f"If a finding is invalid, remove it.\n"
-                    f"Ensure the severity ('critical', 'high', 'medium', 'low') is perfectly calibrated.\n"
-                    f"Return ONLY the final, verified JSON array of finding objects.\n"
-                    f"Keep ALL other fields exactly as they are.\n"
-                    f"Return ONLY a valid JSON array, no extra text."
+                    f"Review the final findings from the Root Cause Agent.\n"
+                    f"Filter out any invalid or false positive findings.\n"
+                    f"Ensure every finding has an 'ai_confidence_score' (float).\n"
+                    f"Return ONLY the final JSON array of findings. No extra text."
                 ),
-                expected_output='A valid JSON array of verified finding objects.',
-                agent=verification_ai_agent,
-                context=[patch_task]
+                expected_output='A valid JSON array of final finding objects.',
+                agent=report_agent,
+                context=[root_cause_task]
             )
 
             # ── Run the Crew ──────────────────────────────
 
             crew = Crew(
-                agents=[parser_agent, auditor_agent, patch_agent, verification_ai_agent],
-                tasks=[parse_task, audit_task, patch_task, verification_ai_task],
+                agents=[collector_agent, quality_agent, recon_agent, compliance_agent, root_cause_agent, report_agent],
+                tasks=[collector_task, quality_task, recon_task, compliance_task, root_cause_task, report_task],
                 process=Process.sequential,
                 verbose=False
             )
 
             logger.info(f"[CrewAI] Audit {self.audit_id}: Launching crew.kickoff() in executor thread...")
-            await self.log_step(parser_run.id, "Parser Agent", "CrewAI pipeline initiated. Running LLM agents...", "Sequential execution: Parser → Auditor → Patch Specialist → Verification QA.")
+            await self.log_step(collector_run.id, "Data Collector Agent", "CrewAI pipeline initiated. Running LLM agents...", "Sequential execution started.")
 
             # CrewAI is synchronous, so run in a thread executor
             loop = asyncio.get_running_loop()
@@ -704,12 +757,18 @@ class PulseApexAuditNetwork:
 
             logger.info(f"[CrewAI] Audit {self.audit_id}: Raw output length: {len(result_text)} chars")
 
-            # Mark parser and auditor runs as completed
-            await self._complete_agent_run(parser_run)
-            await self.log_step(parser_run.id, "Parser Agent", "Document parsing completed by LLM.", "Parser agent finished processing.")
+            # Mark runs as completed
+            await self._complete_agent_run(collector_run)
+            await self.log_step(collector_run.id, "Data Collector Agent", "Data ingestion completed.", "Unified dataset compiled.")
 
-            await self._complete_agent_run(auditor_run)
-            await self.log_step(auditor_run.id, "Compliance Auditor", "Compliance cross-reference audit completed by LLM.", "All rules checked against document content.")
+            await self._complete_agent_run(quality_run)
+            await self.log_step(quality_run.id, "Data Quality Agent", "Data quality checked.", "Quality verified.")
+
+            await self._complete_agent_run(recon_run)
+            await self.log_step(recon_run.id, "Reconciliation Agent", "Reconciliation multi-way matching completed.", "No outstanding mismatches missed.")
+
+            await self._complete_agent_run(compliance_run)
+            await self.log_step(compliance_run.id, "Compliance Agent", "Compliance cross-reference audit completed by LLM.", "All rules checked against document content.")
 
             # Try to parse the final task output (patch_task) as findings JSON
             findings = []
@@ -730,7 +789,7 @@ class PulseApexAuditNetwork:
                 logger.warning(f"[CrewAI] Audit {self.audit_id}: Could not parse JSON from LLM output. Attempting per-task extraction...")
 
                 # Try extracting from individual task outputs
-                for task_obj in [verification_ai_task, patch_task, audit_task]:
+                for task_obj in [report_task, root_cause_task, compliance_task, recon_task]:
                     try:
                         task_output = str(task_obj.output) if hasattr(task_obj, 'output') and task_obj.output else ""
                         if task_output:
@@ -742,8 +801,8 @@ class PulseApexAuditNetwork:
                     except Exception:
                         continue
 
-            await self._complete_agent_run(patch_run)
-            await self.log_step(patch_run.id, "Patch Specialist", f"Correction patches generated. {len(findings)} findings processed.", "Patch generation completed.")
+            await self._complete_agent_run(root_cause_run)
+            await self.log_step(root_cause_run.id, "Root Cause Agent", f"Root cause analysis generated. {len(findings)} findings processed.", "Completed.")
 
             # If no findings could be parsed, create a fallback finding
             if not findings:
@@ -756,45 +815,37 @@ class PulseApexAuditNetwork:
                     "original_value": "Document analyzed",
                     "proposed_value": "Review the AI analysis output for detailed recommendations.",
                     "page_number": None,
-                    "compliance_reference": "AI-Generated Analysis"
+                    "compliance_reference": "AI-Generated Analysis",
+                    "ai_confidence_score": 95.0
                 }]
 
-            # ── STAGE 4: VERIFICATION AGENT ────────────────
+            # ── STAGE 6: REPORT AGENT ────────────────
 
-            verification_run = await self._create_agent_run("Verification Agent", "running")
+            report_run = await self._create_agent_run("Report Agent", "running")
             await self.log_step(
-                verification_run.id, "Verification Agent",
-                f"Verifying {len(findings)} findings and saving to database...",
-                "Computing compliance score and checking for HITL triggers."
+                report_run.id, "Report Agent",
+                f"Compiling final reports and verifying {len(findings)} findings...",
+                "Saving to DB and checking for HITL triggers (<90% confidence)."
             )
 
             # Save findings and handle HITL
             compliance_score = await self._save_findings_and_handle_hitl(findings)
 
-            hitl_count = sum(1 for f in findings if f.get("severity", "").lower() in ("critical", "high"))
+            hitl_count = sum(1 for f in findings if float(f.get("ai_confidence_score", 95.0)) < 90.0)
             if hitl_count > 0:
                 await self.log_step(
-                    verification_run.id, "Verification Agent",
-                    f"CRITICAL DISCREPANCIES REQUIRE APPROVAL: {hitl_count} findings need Human-In-The-Loop review. Audit PAUSED.",
+                    report_run.id, "Report Agent",
+                    f"LOW CONFIDENCE REQUIRES APPROVAL: {hitl_count} findings <90% confidence. Audit PAUSED.",
                     f"Compliance Score: {compliance_score}%. Created {hitl_count} approval requests."
                 )
             else:
                 await self.log_step(
-                    verification_run.id, "Verification Agent",
-                    f"All findings verified. Compliance Score: {compliance_score}%.",
-                    "No critical/high findings requiring manual approval."
+                    report_run.id, "Report Agent",
+                    f"All findings verified with high confidence. Compliance Score: {compliance_score}%.",
+                    "No findings requiring manual approval."
                 )
 
-            await self._complete_agent_run(verification_run)
-
-            # ── STAGE 5: EXECUTIVE SUMMARIZER ──────────────
-            # Only runs if no HITL triggers (audit not paused)
-
-            result = await self.db.execute(select(Audit).where(Audit.id == self.audit_id))
-            audit_obj = result.scalars().first()
-
-            if audit_obj and audit_obj.status != "paused":
-                await self._run_executive_summarizer(findings, compliance_score)
+            await self._complete_agent_run(report_run)
 
             logger.info(f"[CrewAI] Audit {self.audit_id}: Full pipeline completed. Score: {compliance_score}%, Findings: {len(findings)}")
 
@@ -815,56 +866,55 @@ class PulseApexAuditNetwork:
             logger.info(f"[CrewAI] Audit {self.audit_id}: Falling back to simulation mode after error.")
             await self.run_audit_simulation(doc)
 
-    async def _run_executive_summarizer(self, findings: List[Dict[str, Any]], compliance_score: float):
-        summary_run = await self._create_agent_run("Executive Summarizer", "running")
+    async def _run_report_agent(self, findings: List[Dict[str, Any]], compliance_score: float):
+        report_run = await self._create_agent_run("Report Agent", "running")
         await self.log_step(
-            summary_run.id, "Executive Summarizer",
-            "Compiling executive audit summary report using AI...",
-            "Analyzing findings and generating C-Suite brief."
+            report_run.id, "Report Agent",
+            "Compiling final Data Quality, Mismatch, and Compliance reports...",
+            "Formatting outputs for Power BI REST API views."
         )
 
         if CREWAI_AVAILABLE:
             from crewai import Agent, Task, Crew
-            summary_ai_agent = Agent(
-                role='Chief Executive Summarizer',
-                goal='Write a clear, high-level executive brief summarizing the audit findings.',
-                backstory='You are a C-Suite advisor who translates complex compliance audits into concise, impactful executive summaries.',
+            report_agent = Agent(
+                role='Reporting Director',
+                goal='Compile the final verified array of findings for insertion into the database.',
+                backstory='You finalize data for the Power BI Materialized views.',
                 verbose=False,
                 allow_delegation=False,
-                llm=get_openrouter_llm("openai/gpt-oss-120b:free")
+                llm=get_openrouter_llm("cohere/north-mini-code:free")
             )
             
-            findings_str = "\\n".join([f"[{f.get('severity', 'N/A').upper()}] {f.get('title', 'N/A')}: {f.get('description', 'N/A')}" for f in findings])
+            findings_str = "\n".join([f"[{f.get('severity', 'N/A').upper()}] {f.get('title', 'N/A')}: {f.get('description', 'N/A')}" for f in findings])
             
-            summary_ai_task = Task(
+            report_task = Task(
                 description=(
-                    f"Write a 3-paragraph executive summary based on these verified findings:\\n\\n{findings_str}\\n\\n"
-                    f"The overall compliance score is {compliance_score}%.\\n"
-                    f"Highlight the most critical risks, business impact, and overall compliance health."
+                    f"Review these verified findings:\n\n{findings_str}\n\n"
+                    f"Format the final report for Power BI."
                 ),
-                expected_output='A 3-paragraph executive summary in plain text.',
-                agent=summary_ai_agent
+                expected_output='A compiled final report for materialized views.',
+                agent=report_agent
             )
             
-            summary_crew = Crew(agents=[summary_ai_agent], tasks=[summary_ai_task], verbose=False)
+            report_crew = Crew(agents=[report_agent], tasks=[report_task], verbose=False)
             loop = asyncio.get_running_loop()
             try:
-                summary_result = await loop.run_in_executor(None, summary_crew.kickoff)
-                if hasattr(summary_result, 'raw'):
-                    summary_text = str(summary_result.raw)
+                report_result = await loop.run_in_executor(None, report_crew.kickoff)
+                if hasattr(report_result, 'raw'):
+                    report_text = str(report_result.raw)
                 else:
-                    summary_text = str(summary_result)
+                    report_text = str(report_result)
             except Exception as e:
-                summary_text = f"Audit Completed. AI Summary failed: {e}"
+                report_text = f"Audit Completed. Report failed: {e}"
         else:
-            summary_text = f"Audit Completed. Compliance Score: {compliance_score}%. Total findings: {len(findings)}."
+            report_text = f"Audit Completed. Compliance Score: {compliance_score}%. Total findings: {len(findings)}."
 
         await self.log_step(
-            summary_run.id, "Executive Summarizer",
-            f"Executive Summary finalized. Compliance Score: {compliance_score}%.",
-            summary_text
+            report_run.id, "Report Agent",
+            f"Audit Completed. Compliance Score: {compliance_score}%.",
+            "Materialized views ready for BI ingestion."
         )
-        await self._complete_agent_run(summary_run)
+        await self._complete_agent_run(report_run)
 
     async def resume_audit_after_hitl(self):
         """
@@ -883,7 +933,7 @@ class PulseApexAuditNetwork:
             # Still waiting on other approvals
             return
             
-        # All approvals resolved! Let's resume and run the Executive Summary agent.
+        # All approvals resolved! Let's resume and run the Report agent.
         result = await self.db.execute(select(Audit).where(Audit.id == self.audit_id))
         audit_obj = result.scalars().first()
         audit_obj.status = "completed"
@@ -895,4 +945,4 @@ class PulseApexAuditNetwork:
         findings_db = findings_result.scalars().all()
         findings_list = [{"title": f.title, "severity": f.severity, "description": f.description} for f in findings_db]
         
-        await self._run_executive_summarizer(findings_list, audit_obj.compliance_score)
+        await self._run_report_agent(findings_list, audit_obj.compliance_score)

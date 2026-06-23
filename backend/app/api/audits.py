@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from fastapi.responses import StreamingResponse
 import io
 import csv
 import pandas as pd
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload, joinedload
@@ -78,9 +79,9 @@ async def run_crew_task(audit_id: int, doc_id: int):
         except Exception as inner_e:
             logger.error(f"[CrewAI] Could not update audit status: {inner_e}")
 
-@router.post("/start/{document_id}", response_model=AuditResponse)
-@router.post("/trigger/{document_id}", response_model=AuditResponse)
-@router.get("/trigger/{document_id}", response_model=AuditResponse)
+@router.post("/start/{document_id}", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/trigger/{document_id}", status_code=status.HTTP_202_ACCEPTED)
+@router.get("/trigger/{document_id}", status_code=status.HTTP_202_ACCEPTED)
 async def start_audit(
     document_id: int,
     background_tasks: BackgroundTasks,
@@ -128,14 +129,13 @@ async def start_audit(
     # Run in background to prevent request timeouts
     background_tasks.add_task(run_crew_task, db_audit.id, document_id)
     
-    # Re-fetch with eager loading to prevent MissingGreenlet on serialization
-    result = await db.execute(
-        select(Audit)
-        .options(joinedload(Audit.findings))
-        .where(Audit.id == db_audit.id)
-    )
-    db_audit = result.scalars().first()
-    return db_audit
+    task_id = str(uuid.uuid4())
+    
+    return {
+        "task_id": task_id,
+        "status": "accepted",
+        "message": "Audit pipeline initiated in the background."
+    }
 
 @router.get("/status/{audit_id}", response_model=AuditResponse)
 async def get_audit_status(

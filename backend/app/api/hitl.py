@@ -84,6 +84,36 @@ async def submit_approval_decision(
         }
     )
     db.add(trail)
+    
+    # AI Cognitive Memory Generation (Agentic RAG)
+    if decision.notes:
+        try:
+            import logging
+            logger = logging.getLogger("uvicorn.error")
+            from litellm import embedding
+            # Create embedding from the anomaly and human correction
+            text_to_embed = f"Anomaly: {finding.title} - {finding.description}. Human Correction: {decision.notes}"
+            response = embedding(
+                model="text-embedding-3-small", 
+                input=text_to_embed
+            )
+            vector_data = response.data[0]['embedding']
+            
+            from app.models import HumanCorrectionVector
+            hcv = HumanCorrectionVector(
+                original_anomaly=f"{finding.title}: {finding.description}",
+                human_correction=decision.notes,
+                auditor_id=current_user.id,
+                confidence_at_time=finding.ai_confidence_score,
+                embedding=vector_data
+            )
+            db.add(hcv)
+            logger.info(f"[HITL] Created vector embedding for finding {finding.id}")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("uvicorn.error")
+            logger.error(f"[HITL] Failed to generate embedding for finding {finding.id}: {e}")
+
     await db.commit()
     
     # Check if this resolves all pending issues for the audit, and if so, resume it
