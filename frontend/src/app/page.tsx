@@ -8,7 +8,8 @@ import {
   Shield, UploadCloud, Layers, ClipboardCheck, Terminal, BookOpen, FolderOpen, PieChart,
   Settings, User as UserIcon, LogOut, CheckCircle, AlertTriangle, 
   XCircle, Play, Info, ArrowRight, RefreshCw, Check, X, FileText,
-  AlertCircle, ShieldAlert, Cpu, Activity
+  AlertCircle, ShieldAlert, Cpu, Activity, Search, ChevronUp, ChevronDown,
+  MoreHorizontal, Sparkles, Edit, Trash2, Mail, Lock, Eye, EyeOff
 } from "lucide-react";
 import { API_BASE_URL, WS_BASE_URL } from "../config/api";
 import NativeDashboard from "../components/Dashboard";
@@ -31,6 +32,7 @@ export default function Home() {
   const [fullName, setFullName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -52,8 +54,10 @@ export default function Home() {
   // New Compliance Rule manual state
   const [newRuleTitle, setNewRuleTitle] = useState("");
   const [newRuleCategory, setNewRuleCategory] = useState("Tax");
+  const [newRuleSeverity, setNewRuleSeverity] = useState("Medium");
   const [newRuleText, setNewRuleText] = useState("");
   const [complianceRules, setComplianceRules] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Refs for auto-scroll in logs
   const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -648,886 +652,571 @@ export default function Home() {
   // Render Login/Register view if not logged in
   if (!token) {
     return (
-      <div className="flex-1 flex items-center justify-center p-6 bg-[#030305] relative overflow-hidden">
-        {/* Decorative Grid and Ambient Glows */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px]" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-sky-600/10 blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F8F9FA] relative overflow-hidden min-h-screen">
+        {/* Decorative Grid Patterns and Subtle Light Glows */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-sky-500/5 blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-md glass-panel p-8 rounded-2xl relative z-10 border border-slate-200 shadow-2xl">
-          <div className="flex items-center gap-3 justify-center mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <Shield className="w-6 h-6 text-white" />
+        {/* LOGO & BRAND */}
+        <div className="flex flex-col items-center gap-2 mb-6 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-500/25">
+              <Shield className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 font-sans">
-              PULSEAPEX AI
-            </h1>
+            <div className="flex flex-col">
+              <span className="text-sm font-extrabold tracking-wide text-slate-800">PULSEAPEX AI</span>
+              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold -mt-0.5">Agentic Auditor</span>
+            </div>
           </div>
+        </div>
 
-          <div className="mb-6 flex p-1 bg-sky-50/80 rounded-lg border border-slate-100">
-            <button
-              onClick={() => setIsRegistering(false)}
-              className={`flex-1 py-2 rounded-md font-medium text-sm transition-all ${!isRegistering ? 'bg-sky-600/15 text-sky-600 border border-cyan-500/20' : 'text-slate-600 hover:text-slate-800'}`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => setIsRegistering(true)}
-              className={`flex-1 py-2 rounded-md font-medium text-sm transition-all ${isRegistering ? 'bg-sky-600/15 text-sky-600 border border-cyan-500/20' : 'text-slate-600 hover:text-slate-800'}`}
-            >
-              Register
-            </button>
-          </div>
-
-          <form onSubmit={handleAuth} className="space-y-4">
-            {isRegistering && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Organization Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={orgName}
-                    onChange={(e) => setOrgName(e.target.value)}
-                    placeholder="Acme Corp"
-                    className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
-                  />
-                </div>
-              </>
-            )}
-
+        {/* SPLIT-PANEL CARD */}
+        <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl border border-slate-200/60 overflow-hidden flex flex-col md:flex-row min-h-[580px] relative z-10">
+          
+          {/* LEFT PANEL (FORM) */}
+          <div className="w-full md:w-1/2 p-8 flex flex-col justify-between">
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Email Address</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="executive@company.com"
-                className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
-              />
-            </div>
+              <h2 className="text-xl font-bold text-slate-800">Welcome to PulseApex AI Auditor</h2>
+              <p className="text-xs text-slate-400 mt-1 mb-6">Login or Register to Autonomously Audit your Documents.</p>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-600 mb-1 tracking-wider">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-2 bg-sky-50 border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm text-slate-800"
-              />
-            </div>
+              <form onSubmit={handleAuth} className="space-y-4">
+                {isRegistering && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                          <UserIcon className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          required
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="John Doe"
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-800 placeholder:text-slate-400"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Organization Name</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Cpu className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          required
+                          value={orgName}
+                          onChange={(e) => setOrgName(e.target.value)}
+                          placeholder="Acme Corp"
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-800 placeholder:text-slate-400"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-            {error && (
-              <div className="p-3 bg-red-950/35 border border-red-500/25 rounded-lg text-xs text-red-400 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{error}</span>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email Address"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-800 placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Password"
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-800 placeholder:text-slate-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {!isRegistering && (
+                  <div className="flex justify-end">
+                    <span className="text-xs font-semibold text-indigo-600 hover:underline cursor-pointer">Forgot Password?</span>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-600 flex items-center gap-2 shadow-sm">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {loading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span>{isRegistering ? "Register Now" : "Sign In"}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Toggle Tab link */}
+              <div className="text-center mt-4">
+                <span className="text-xs text-slate-500">
+                  {isRegistering ? "Already have an account? " : "New to PulseApex? "}
+                  <button
+                    type="button"
+                    onClick={() => { setIsRegistering(!isRegistering); setError(""); }}
+                    className="font-bold text-indigo-600 hover:underline cursor-pointer"
+                  >
+                    {isRegistering ? "Sign In" : "Register Now"}
+                  </button>
+                </span>
               </div>
-            )}
+
+              {/* OAuth Segment */}
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100" /></div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold text-slate-400"><span className="bg-white px-2">Or Sign in with</span></div>
+              </div>
+
+              <div className="flex justify-center gap-3">
+                {/* Google Button */}
+                <button type="button" className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer shadow-sm">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.84 14.97 1 12 1 7.35 1 3.39 3.65 1.5 7.5l3.6 2.8C6.01 7.22 8.77 5.04 12 5.04z" />
+                    <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.33H12v4.51h6.44c-.28 1.47-1.11 2.71-2.36 3.55l3.64 2.83c2.13-1.97 3.41-4.87 3.41-8.56z" />
+                    <path fill="#FBBC05" d="M5.1 14.7c-.24-.72-.38-1.49-.38-2.3s.14-1.58.38-2.3L1.5 7.3C.54 9.22 0 11.37 0 13.6c0 2.23.54 4.38 1.5 6.3l3.6-2.82-1-2.38z" />
+                    <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.64-2.83c-1.1.74-2.51 1.18-4.32 1.18-3.23 0-5.99-2.18-6.96-5.26l-3.6 2.8C3.39 20.35 7.35 23 12 23z" />
+                  </svg>
+                </button>
+                {/* Azure Button */}
+                <button type="button" className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer shadow-sm">
+                  <svg className="w-4 h-4" viewBox="0 0 23 23">
+                    <rect x="0" y="0" width="11" height="11" fill="#F25022" />
+                    <rect x="12" y="0" width="11" height="11" fill="#7FBA00" />
+                    <rect x="0" y="12" width="11" height="11" fill="#00A1F1" />
+                    <rect x="12" y="12" width="11" height="11" fill="#FFB900" />
+                  </svg>
+                </button>
+                {/* Okta/Other Icon Button */}
+                <button type="button" className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer shadow-sm text-slate-700">
+                  <Shield className="w-4 h-4 text-slate-800" />
+                </button>
+              </div>
+            </div>
 
             {/* Connection Mode Settings inside Auth for developers */}
-            <div className="pt-2 border-t border-slate-100 mt-6 flex flex-col gap-2">
-              <label className="text-[10px] font-semibold uppercase text-slate-500 tracking-wider">System Integration Mode</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConnectionMode("mock")}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold border ${connectionMode === "mock" ? 'bg-cyan-950/40 text-sky-600 border-cyan-500/40' : 'bg-transparent text-slate-500 border-slate-200 hover:text-slate-700'}`}
-                >
-                  LOCAL SANDBOX (FREE)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConnectionMode("live")}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold border ${connectionMode === "live" ? 'bg-purple-950/40 text-blue-600 border-purple-500/40' : 'bg-transparent text-slate-500 border-slate-200 hover:text-slate-700'}`}
-                >
-                  LIVE API (REQUIRES API/DB)
-                </button>
-              </div>
-              {connectionMode === "live" && (
-                <div className="flex flex-col gap-1.5 mt-2">
-                  <input
-                    type="text"
-                    value={API_BASE_URL} readOnly
-                    
-                    placeholder="API Endpoint"
-                    className="w-full px-2 py-1 bg-sky-50 border border-slate-100 rounded text-[10px] text-slate-600 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    value={WS_BASE_URL} readOnly
-                    
-                    placeholder="WS Endpoint"
-                    className="w-full px-2 py-1 bg-sky-50 border border-slate-100 rounded text-[10px] text-slate-600 focus:outline-none"
-                  />
+            <div className="pt-4 border-t border-slate-100 mt-6 flex flex-col gap-2">
+              <details className="cursor-pointer group">
+                <summary className="text-[10px] font-bold uppercase text-slate-400 tracking-wider list-none flex items-center gap-1 hover:text-slate-600 transition-colors select-none">
+                  <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
+                  <span>Integration Config</span>
+                </summary>
+                <div className="flex flex-col gap-2 mt-2">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConnectionMode("mock")}
+                      className={`flex-1 py-1 rounded-lg text-[9px] font-bold border transition-colors ${connectionMode === "mock" ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-transparent text-slate-400 border-slate-200 hover:text-slate-600'}`}
+                    >
+                      LOCAL SANDBOX
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConnectionMode("live")}
+                      className={`flex-1 py-1 rounded-lg text-[9px] font-bold border transition-colors ${connectionMode === "live" ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-transparent text-slate-400 border-slate-200 hover:text-slate-600'}`}
+                    >
+                      LIVE API
+                    </button>
+                  </div>
+                  {connectionMode === "live" && (
+                    <div className="flex flex-col gap-1 mt-1">
+                      <input
+                        type="text"
+                        value={API_BASE_URL} readOnly
+                        placeholder="API Endpoint"
+                        className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[9px] text-slate-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={WS_BASE_URL} readOnly
+                        placeholder="WS Endpoint"
+                        className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[9px] text-slate-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
+              </details>
+            </div>
+          </div>
+
+          {/* RIGHT PANEL (VALUE PROPOSITION) */}
+          <div className="w-full md:w-1/2 bg-gradient-to-br from-indigo-50 via-slate-50 to-indigo-100/50 p-8 flex flex-col justify-between border-l border-slate-200/50 relative overflow-hidden">
+            {/* Visual Overlays */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-sky-500/10 rounded-full blur-xl pointer-events-none" />
+            
+            {/* Network nodes diagram */}
+            <div className="relative flex items-center justify-center py-6">
+              <div className="relative w-44 h-44 flex items-center justify-center">
+                {/* Central checkmark shield node */}
+                <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 z-10 border border-indigo-400">
+                  <Shield className="w-7 h-7 text-white" />
+                </div>
+                
+                {/* Connected nodes */}
+                <div className="absolute top-2 left-6 w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 animate-bounce" style={{ animationDuration: '3s' }}><Cpu className="w-4 h-4 text-indigo-500" /></div>
+                <div className="absolute top-8 right-4 w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 animate-bounce" style={{ animationDuration: '4s' }}><Layers className="w-4 h-4 text-sky-500" /></div>
+                <div className="absolute bottom-6 left-4 w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 animate-bounce" style={{ animationDuration: '5s' }}><ClipboardCheck className="w-4 h-4 text-emerald-500" /></div>
+                <div className="absolute bottom-4 right-10 w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-500 animate-bounce" style={{ animationDuration: '6.5s' }}><FileText className="w-4 h-4 text-amber-500" /></div>
+
+                {/* Connecting SVG lines */}
+                <svg className="absolute inset-0 w-full h-full text-indigo-200 pointer-events-none">
+                  <line x1="88" y1="88" x2="36" y2="24" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <line x1="88" y1="88" x2="152" y2="48" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <line x1="88" y1="88" x2="32" y2="148" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <line x1="88" y1="88" x2="136" y2="156" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+                </svg>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white rounded-lg font-semibold text-sm transition-all shadow-lg shadow-cyan-500/10 cursor-pointer disabled:opacity-50 mt-4 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : isRegistering ? (
-                "Create Executive Account"
-              ) : (
-                "Initialize Auditing Dashboard"
-              )}
-            </button>
-          </form>
+            {/* Value Props Text */}
+            <div className="space-y-4 relative z-10">
+              <h3 className="text-lg font-extrabold text-slate-800 tracking-tight leading-snug">
+                Automated Compliance Auditing and Patching.
+              </h3>
+              
+              <ul className="space-y-2.5">
+                {[
+                  "Real-time Autonomous Scanning.",
+                  "Compliance Discrepancy Detection.",
+                  "Automatic Security Patches.",
+                  "Centralized Threat View."
+                ].map((val, idx) => (
+                  <li key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-600">
+                    <div className="w-4 h-4 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                      <Check className="w-2.5 h-2.5" />
+                    </div>
+                    <span>{val}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM EXTERNAL FOOTER */}
+        <div className="text-[10px] text-slate-400 font-bold tracking-wide mt-8 relative z-10 flex gap-4">
+          <span className="hover:text-slate-600 cursor-pointer">Support Center</span>
+          <span className="text-slate-300">&bull;</span>
+          <span className="hover:text-slate-600 cursor-pointer">API Documentation</span>
+          <span className="text-slate-300">&bull;</span>
+          <span>&copy; 2026 PulseApex AI</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-[#040407]">
-      {/* 1. SIDEBAR NAVIGATION */}
-      <aside className="w-full md:w-64 bg-[#0a0a12] border-b md:border-b-0 md:border-r border-slate-100 flex flex-col justify-between flex-shrink-0 z-20">
+    <div className="flex-1 flex flex-col md:flex-row h-screen overflow-hidden bg-[#F8F9FA]">
+      {/* SIDEBAR */}
+      <aside className="w-full md:w-56 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-between flex-shrink-0 z-20">
         <div>
-          {/* Logo Brand */}
-          <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-950">
-            <div className="w-8 h-8 rounded bg-gradient-to-tr from-cyan-500 to-purple-500 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+          <div className="h-14 flex items-center gap-3 px-5 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
-                PULSEAPEX AI
-              </span>
-              <span className="text-[9px] uppercase tracking-widest text-sky-600 font-bold">
-                Agentic Auditor
-              </span>
+              <span className="text-sm font-extrabold tracking-wide text-slate-800">PULSEAPEX AI</span>
+              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-semibold">Agentic Auditor</span>
             </div>
           </div>
-
-          {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
+          <nav className="p-3 space-y-1">
             {( [
-              { id: "audit", label: "Audit & Files", icon: FolderOpen },
-              { id: "overview", label: "Overview", icon: PieChart }
+              { id: "audit", label: "Audit & Files", icon: FolderOpen, sparkle: true },
+              { id: "overview", label: "Overview", icon: PieChart, sparkle: false }
             ] as any[] ).map((item) => {
               const Icon = item.icon;
               const active = activeTab === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    if (item.id === "workspace" && documents.length > 0 && !selectedDocId) {
-                      setSelectedDocId(documents[0].id);
-                    }
-                  }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                    active 
-                      ? 'bg-gradient-to-r from-cyan-950/45 to-transparent border-l-2 border-cyan-500 text-sky-600' 
-                      : 'text-slate-600 hover:text-slate-800 hover:bg-white/40'
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                    active ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${active ? 'text-sky-600' : 'text-slate-600'}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/25">
-                      {item.badge}
-                    </span>
-                  )}
-                  {item.activeGlow && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  )}
+                  <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                  {item.sparkle && active && <Sparkles className="w-3.5 h-3.5 text-indigo-200 ml-auto" />}
                 </button>
               );
             })}
           </nav>
         </div>
-
-        {/* User profile footer */}
-        <div className="p-4 border-t border-gray-950 bg-sky-50/20">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-full bg-slate-100 shadow-inner flex items-center justify-center border border-slate-300">
-              <UserIcon className="w-4 h-4 text-slate-700" />
+        <div className="p-4 border-t border-slate-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+              <UserIcon className="w-4 h-4 text-slate-500" />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-slate-800 truncate">{user?.full_name || "Guest Auditor"}</span>
-              <span className="text-[10px] text-slate-500 truncate">{user?.email || "sandbox-session"}</span>
+              <span className="text-xs font-semibold text-slate-700 truncate">{user?.full_name || "Guest Auditor"}</span>
+              <span className="text-[10px] text-slate-400 truncate">{user?.email || "sandbox-session"}</span>
             </div>
           </div>
-
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-2 justify-center py-2 rounded bg-sky-50 border border-slate-100 hover:bg-red-950/10 hover:border-red-500/20 hover:text-red-400 text-xs text-slate-600 transition-all cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Terminate Session</span>
+          <button onClick={logout} className="w-full flex items-center gap-2 justify-center py-2 rounded-lg bg-slate-50 border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 text-xs text-slate-500 transition-all cursor-pointer">
+            <LogOut className="w-3.5 h-3.5" /><span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* 2. MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 border-b border-gray-950 px-6 flex items-center justify-between bg-[#07070d]/60 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wider">
-              {activeTab.replace("-", " ")}
-            </h2>
-          </div>
-
-          {/* Connection status tag */}
+        <header className="h-14 border-b border-slate-200 px-6 flex items-center justify-between bg-white flex-shrink-0">
+          <h2 className="text-base font-bold text-slate-800">PulseApex Agentic Auditor</h2>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-sky-50 px-3 py-1.5 rounded-full border border-slate-100 text-xs">
-              <Activity className={`w-3.5 h-3.5 ${connectionMode === 'mock' || wsConnected ? 'text-emerald-500' : 'text-amber-500'}`} />
-              <span className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider">
-                {connectionMode === "mock" ? "Local Sandbox (Offline)" : `Live API: ${wsConnected ? 'Connected' : 'Reconnecting'}`}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50">
+              <div className={`w-2 h-2 rounded-full ${connectionMode === 'mock' || wsConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span className="text-[11px] text-emerald-700 font-bold uppercase tracking-wider">
+                {connectionMode === "mock" ? "Local Sandbox" : `Live API: ${wsConnected ? 'Operational' : 'Reconnecting'}`}
               </span>
+            </div>
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 w-48">
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <input type="text" placeholder="Search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none w-full" />
+            </div>
+            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center cursor-pointer hover:border-slate-300 transition-colors">
+              <UserIcon className="w-4 h-4 text-slate-500" />
             </div>
           </div>
         </header>
 
-        {/* Tab-driven panels wrapper */}
         <div className="flex-1 overflow-y-auto p-6">
-
           {/* TAB: AUDIT & FILES */}
           {activeTab === "audit" && (
-            <div className="flex flex-col gap-6">
-              <div className="flex-1 space-y-6">
-                            <div className="max-w-2xl mx-auto space-y-6">
-              <div className="glass-panel p-6 rounded-2xl text-center space-y-4">
-                <h3 className="text-lg font-bold text-slate-800">Upload New Audit Documents</h3>
-                <p className="text-sm text-slate-600">
-                  Select corporate agreements, legal contracts, CSV transactions, or financial Excel spreadsheets. Supported file types: PDF, DOCX, XLSX, CSV, TXT (Maximum size 25MB).
-                </p>
+            <div className="space-y-8 max-w-[1400px] mx-auto">
+              <div>
+                <h1 className="text-xl font-bold text-slate-800">PulseApex Audit Workspace</h1>
+                <p className="text-sm text-slate-500 mt-1">Combine document auditing, file handling, and rule configuration in one unified interface.</p>
               </div>
 
-              {/* Drag & Drop Card */}
-              <div
-                onDragEnter={handleDrag}
-                onDragOver={handleDrag}
-                onDragLeave={handleDrag}
-                onDrop={handleDrop}
-                className={`glass-panel p-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 transition-all ${
-                  dragActive ? 'border-cyan-500 bg-cyan-950/10' : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="w-16 h-16 rounded-full bg-sky-50 flex items-center justify-center border border-slate-100 shadow-md">
-                  <UploadCloud className="w-8 h-8 text-sky-600" />
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* MODULE 1 */}
+                <div className="lg:col-span-2 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Module 1: Document Upload & Primary Action</h3>
+                  <div className="premium-card p-6">
+                    <div onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-400'}`}
+                      onClick={() => document.getElementById('file-input')?.click()}>
+                      <UploadCloud className={`w-10 h-10 mx-auto mb-3 ${dragActive ? 'text-indigo-500' : 'text-slate-400'}`} />
+                      <p className="text-sm font-semibold text-slate-700">Drag & Drop Files Here (PDF, Images, Word)</p>
+                      <input id="file-input" type="file" className="hidden" accept=".pdf,.docx,.xlsx,.csv,.txt,.png,.jpg,.jpeg" onChange={handleFileInput} />
+                    </div>
+                    <button onClick={() => { const u = documents.find(d => d.status === 'uploaded'); if (u) handleStartAudit(u.id); }}
+                      className="mt-4 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-all cursor-pointer shadow-md shadow-indigo-500/20">Start New Audit</button>
+                    {uploadingFile && (
+                      <div className="mt-4 space-y-2 pt-4 border-t border-slate-100">
+                        <div className="flex justify-between text-xs text-slate-600"><span className="font-semibold">Current Uploads (PDF, Images, Word)</span><span className="text-slate-400">Progress</span></div>
+                        <div>
+                          <div className="flex justify-between text-xs mb-1"><span className="text-slate-600 truncate max-w-[200px]">{uploadingFile}</span><span className="text-indigo-600 font-bold">{uploadProgress}%</span></div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} /></div>
+                        </div>
+                      </div>
+                    )}
+                    {!uploadingFile && documents.length > 0 && (
+                      <div className="mt-4 space-y-2 pt-4 border-t border-slate-100">
+                        <div className="flex justify-between text-xs text-slate-600"><span className="font-semibold">Recent Uploads</span><span className="text-slate-400">Status</span></div>
+                        {documents.slice(0, 2).map(doc => (
+                          <div key={doc.id} className="flex justify-between text-xs">
+                            <span className="text-slate-600 truncate max-w-[200px]">{doc.filename}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${doc.status === 'audited' ? 'bg-emerald-50 text-emerald-700' : doc.status === 'uploaded' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{doc.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="text-center space-y-1">
-                  <span className="text-sm font-semibold text-slate-700 block">Drag & Drop file here, or</span>
-                  <label className="text-xs text-sky-600 font-bold hover:underline cursor-pointer block mt-1">
-                    browse from directories
-                    <input 
-                      type="file" 
-                      onChange={handleFileInput}
-                      className="hidden" 
-                      accept=".pdf,.docx,.xlsx,.csv,.txt"
-                    />
-                  </label>
-                </div>
-              </div>
 
-              {/* Uploading Status */}
-              {uploadingFile && (
-                <div className="glass-panel p-5 rounded-2xl space-y-3 animate-pulse">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-slate-700">Uploading: {uploadingFile}</span>
-                    <span className="font-bold text-sky-600">{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-sky-50 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-sky-600 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-                <div className="pt-6 border-t border-slate-200">
-                  <h3 className="text-xl font-bold text-slate-800 mb-4">Unified Processing Queue</h3>
-                              <div className="space-y-6">
-              {/* Document selection helper */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-950">
-                <div className="flex items-center gap-3 overflow-x-auto">
-                  {documents.map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => setSelectedDocId(d.id)}
-                      className={`px-4 py-2 rounded-lg text-xs font-semibold border flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
-                        selectedDocId === d.id 
-                          ? 'bg-cyan-950/30 text-sky-600 border-cyan-500/40' 
-                          : 'bg-transparent text-slate-500 border-slate-100 hover:text-slate-700'
-                      }`}
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      <span>{d.filename}</span>
+                {/* MODULE 2 */}
+                <div className="lg:col-span-3 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Module 2: Configure Compliance Rules (Optional)</h3>
+                  <div className="premium-card">
+                    <button onClick={() => setShowRulesManager(!showRulesManager)} className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-slate-50 transition-colors rounded-xl">
+                      <span className="text-sm font-bold text-slate-700">Rules Ingestion and Management (Optional)</span>
+                      {showRulesManager ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     </button>
-                  ))}
+                    {showRulesManager && (
+                      <div className="px-5 pb-5">
+                        <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                          <div className="flex-1 border border-slate-200 rounded-xl p-5 space-y-4">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Option A: Document Ingestion (PDF, Image, Word)</h4>
+                            <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${rulesDragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 bg-slate-50/50 hover:bg-slate-50'}`}
+                              onDragEnter={() => setRulesDragActive(true)} onDragLeave={() => setRulesDragActive(false)} onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => { e.preventDefault(); setRulesDragActive(false); setIsProcessingRules(true); setTimeout(() => setIsProcessingRules(false), 3000); }}>
+                              {isProcessingRules ? (
+                                <div className="flex flex-col items-center gap-2"><RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" /><p className="text-sm font-semibold text-slate-700">AI Processing...</p></div>
+                              ) : (
+                                <div className="flex flex-col items-center gap-2">
+                                  <div className="w-14 h-14 rounded-full bg-indigo-50 border-2 border-dashed border-indigo-300 flex items-center justify-center"><Cpu className="w-6 h-6 text-indigo-500" /></div>
+                                  <p className="text-sm font-semibold text-slate-700 mt-1">Upload Corporate Rulebooks for AI Parsing</p>
+                                </div>
+                              )}
+                            </div>
+                            <button className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg font-semibold text-xs transition-all cursor-pointer">Process Document Rules</button>
+                          </div>
+                          <div className="flex items-center justify-center"><span className="text-sm font-bold text-slate-400 px-2">OR</span></div>
+                          <div className="flex-1 border border-slate-200 rounded-xl p-5 space-y-3">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Option B: Manual Form Ingestion</h4>
+                            <form onSubmit={handleAddRule} className="space-y-3">
+                              <p className="text-xs font-bold text-slate-600">Step 1: Rule Details</p>
+                              <div className="grid grid-cols-2 gap-3">
+                                <input type="text" required value={newRuleTitle} onChange={(e) => setNewRuleTitle(e.target.value)} placeholder="Rule Name" className="px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-700 placeholder:text-slate-400" />
+                                <select value={newRuleCategory} onChange={(e) => setNewRuleCategory(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-700">
+                                  <option value="Tax">Tax & Finance</option><option value="GDPR">GDPR</option><option value="Contract">Contracts & Legal</option><option value="Governance">Governance</option>
+                                </select>
+                              </div>
+                              <p className="text-xs font-bold text-slate-600">Step 2: Severity</p>
+                              <div className="grid grid-cols-2 gap-3">
+                                <select value={newRuleSeverity} onChange={(e) => setNewRuleSeverity(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-700">
+                                  <option value="Critical">Critical</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option>
+                                </select>
+                                <input type="text" required value={newRuleText} onChange={(e) => setNewRuleText(e.target.value)} placeholder="Description" className="px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 text-sm text-slate-700 placeholder:text-slate-400" />
+                              </div>
+                              <button type="submit" className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg font-semibold text-xs transition-all cursor-pointer">Add Rule Manually</button>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {documents.length > 0 && (
-                  <button
-                    onClick={() => {
-                      fetchDocuments();
-                      if (selectedDocId) {
-                        fetchAuditForDoc(selectedDocId);
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-sky-50 border border-slate-100 hover:border-slate-200 text-slate-700 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Sync Findings</span>
-                  </button>
-                )}
               </div>
 
-              {!selectedDoc ? (
-                <div className="text-center py-20 text-xs text-slate-500">Please select a document or upload one to inspect the workspace.</div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Left Column: Metadata & Analysis timeline */}
-                  <div className="space-y-6 lg:col-span-1">
-                    {/* General Metadata Panel */}
-                    <div className="glass-panel p-5 rounded-2xl space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Document Insights</h4>
-                      
-                      <div className="space-y-3 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Filename:</span>
-                          <span className="text-slate-700 truncate max-w-[180px] font-medium">{selectedDoc.filename}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Formats:</span>
-                          <span className="text-slate-700 font-bold uppercase">{selectedDoc.file_type}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Upload Date:</span>
-                          <span className="text-slate-600">{new Date(selectedDoc.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Verification Status:</span>
-                          <span className="text-sky-600 font-bold uppercase">{selectedDoc.status}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Gauge score card */}
-                    <div className="glass-panel p-5 rounded-2xl space-y-4 text-center">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Compliance Integrity Index</h4>
-                      
-                      <div className="py-2">
-                        <div className="text-5xl font-black text-glow-cyan text-sky-600">
-                          {selectedAudit ? `${selectedAudit.compliance_score}%` : "100%"}
-                        </div>
-                        <span className="text-[10px] uppercase text-slate-500 tracking-wider font-bold mt-2 block">
-                          Current Score Rating
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Agent reasoning timeline */}
-                    <div className="glass-panel p-5 rounded-2xl space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Agent Reasoning Log</h4>
-                      
-                      <div className="space-y-4 relative pl-4 border-l border-slate-100 text-xs">
-                        <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
-                          <div className="font-semibold text-slate-700">Data Collector Agent</div>
-                          <p className="text-slate-500 mt-1">Extracted document structures and metadata matrices successfully.</p>
-                        </div>
-
-                        <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
-                          <div className="font-semibold text-slate-700">Data Quality Agent</div>
-                          <p className="text-slate-500 mt-1">Validated structure, checked for missing fields and format compliance.</p>
-                        </div>
-
-                        <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
-                          <div className="font-semibold text-slate-700">Reconciliation Agent</div>
-                          <p className="text-slate-500 mt-1">Matched ERP values with extracted invoice records securely.</p>
-                        </div>
-
-                        <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-sky-500" />
-                          <div className="font-semibold text-slate-700">Compliance Agent</div>
-                          <p className="text-slate-500 mt-1">Validated findings against GST, SOC2, and Internal Guidelines.</p>
-                        </div>
-
-                        <div className="relative">
-                          <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                          <div className="font-semibold text-slate-700">Root Cause Agent</div>
-                          <p className="text-slate-500 mt-1">
-                            {selectedDoc.status === 'paused' ? 'Violations identified with < 90% confidence. Raised pipeline locks for Human-in-the-Loop review.' : 'Analyzed root causes and finalized confidence scoring.'}
-                          </p>
-                        </div>
-
-                        {selectedDoc.status === 'audited' && (
-                          <div className="relative">
-                            <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full bg-green-400" />
-                            <div className="font-semibold text-slate-700">Report Agent</div>
-                            <p className="text-slate-500 mt-1">Generated final Materialized Views for Power BI REST ingestion.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Findings details */}
-                  <div className="lg:col-span-2 space-y-6">
-                    {/* Findings list */}
-                    <div className="glass-panel p-6 rounded-2xl space-y-4">
-                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">Discovered Anomalies</h4>
-
-                      <div className="space-y-3">
-                        {!selectedAudit || selectedAudit.findings.length === 0 ? (
-                          <div className="text-center py-10 text-xs text-slate-500">No discrepancies identified in this document. Good health!</div>
+              {/* MODULE 3 */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Module 3: Current Files & Audit Status Table</h3>
+                <div className="premium-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider"><div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">File Name <ChevronDown className="w-3 h-3" /></div></th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Upload Date</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Compliance Category</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Agent Patches</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {documents.length === 0 ? (
+                          <tr><td colSpan={6} className="text-center py-10 text-sm text-slate-400">No documents uploaded yet. Drag & drop files above to begin.</td></tr>
                         ) : (
-                          selectedAudit.findings.map((f) => (
-                            <div key={f.id} className="p-4 bg-sky-50/60 border border-slate-100 rounded-xl space-y-3">
-                              <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
-                                      f.severity === 'critical' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                      f.severity === 'high' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' :
-                                      'bg-sky-600/10 text-sky-600 border-cyan-500/20'
-                                    }`}>
-                                      {f.severity.toUpperCase()}
-                                    </span>
-                                    <h5 className="font-bold text-sm text-slate-700">{f.title}</h5>
+                          documents.map((doc) => {
+                            const audit = audits[doc.id];
+                            const statusMap: Record<string, { label: string; cls: string }> = {
+                              audited: { label: 'Matched', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                              paused: { label: 'HITL Review Needed', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+                              parsing: { label: 'Processing (80%)', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+                              uploaded: { label: 'Flagged', cls: 'bg-red-50 text-red-600 border-red-200' },
+                              completed: { label: 'Matched', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                            };
+                            const st = statusMap[doc.status] || { label: doc.status, cls: 'bg-slate-50 text-slate-600 border-slate-200' };
+                            const category = audit?.findings?.[0]?.compliance_reference?.includes('SOC') ? 'SOC-2' : audit?.findings?.[0]?.category === 'risk' ? 'Financial' : 'GDPR';
+                            return (
+                              <tr key={doc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                <td className="px-5 py-3.5"><div className="flex items-center gap-2.5"><FileText className={`w-4 h-4 flex-shrink-0 ${doc.file_type === 'PDF' ? 'text-red-400' : doc.file_type === 'XLSX' || doc.file_type === 'CSV' ? 'text-emerald-500' : 'text-blue-400'}`} /><span className="text-slate-700 font-medium truncate max-w-[220px]">{doc.filename}</span></div></td>
+                                <td className="px-5 py-3.5 text-slate-500 text-xs">{new Date(doc.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                                <td className="px-5 py-3.5"><span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold border ${st.cls}`}>{st.label}</span></td>
+                                <td className="px-5 py-3.5 text-slate-600 text-xs font-medium">{category}</td>
+                                <td className="px-5 py-3.5">{audit?.status === 'completed' ? (<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">PR <span className="bg-indigo-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px]">{audit.findings.length}</span></span>) : <span className="text-xs text-slate-400 italic">Generating...</span>}</td>
+                                <td className="px-5 py-3.5">
+                                  <div className="flex items-center gap-1.5">
+                                    {doc.status === 'uploaded' && <button onClick={() => handleStartAudit(doc.id)} className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer" title="Run Audit"><Play className="w-3.5 h-3.5" /></button>}
+                                    <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Edit"><Edit className="w-3.5 h-3.5" /></button>
+                                    <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="More"><MoreHorizontal className="w-3.5 h-3.5" /></button>
                                   </div>
-                                  <p className="text-xs text-slate-600 leading-relaxed">{f.description}</p>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-xs">
-                                <div className="p-2 bg-sky-50/40 border border-slate-100 rounded">
-                                  <div className="text-[10px] text-slate-500 font-semibold mb-1 uppercase">Detected Value</div>
-                                  <span className="font-mono text-red-400">{f.original_value || "N/A"}</span>
-                                </div>
-                                <div className="p-2 bg-sky-50/40 border border-slate-100 rounded">
-                                  <div className="text-[10px] text-slate-500 font-semibold mb-1 uppercase">AI Proposed Patch</div>
-                                  <span className="font-mono text-emerald-600">{f.proposed_value || "N/A"}</span>
-                                </div>
-                              </div>
-
-                              <div className="flex justify-between items-center pt-2 text-[10px] font-semibold text-slate-500">
-                                <span>Page: {f.page_number || "Cover"}</span>
-                                <span>Reference: {f.compliance_reference || "Default Guidelines"}</span>
-                                <span className={`uppercase font-bold ${
-                                  f.status === 'approved' ? 'text-emerald-600' :
-                                  f.status === 'rejected' ? 'text-red-400' :
-                                  'text-amber-600'
-                                }`}>
-                                  Status: {f.status}
-                                </span>
-                              </div>
-                            </div>
-                          ))
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
-                      </div>
-                    </div>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              )}
-            </div>
-                              <div className="space-y-6">
-              <div className="glass-panel p-6 rounded-2xl bg-gradient-to-r from-amber-950/10 via-transparent to-transparent">
-                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-amber-500" />
-                  <span>Human-In-The-Loop Review Gateway</span>
-                </h3>
-                <p className="text-sm text-slate-600 max-w-2xl">
-                  The agent network automatically halts pipeline execution when a high-risk policy violation is flagged. Audit logs wait for manual resolution inputs below.
-                </p>
               </div>
 
-              <div className="space-y-4">
-                {pendingApprovals.length === 0 ? (
-                  <div className="glass-panel p-10 rounded-2xl text-center text-xs text-slate-500">
-                    <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-3" />
-                    <span>No pending approval requests. The audit network has clear runways!</span>
+              {/* MODULE 4 */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Agents Network Feed (Integrated)</h3>
+                <div className="premium-card p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-slate-700">Real-time Agent Activity Stream</span>
+                    {agentLogs.length > 0 && <button onClick={clearAgentLogs} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer uppercase tracking-wider">Clear</button>}
                   </div>
-                ) : (
-                  pendingApprovals.map((req) => (
-                    <div key={req.id} className="glass-panel p-6 rounded-2xl space-y-4">
-                      <div className="flex justify-between items-start pb-3 border-b border-gray-950">
-                        <div className="space-y-1">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Audit Frame #{req.audit_id}</span>
-                          <h4 className="font-bold text-base text-slate-700">{req.finding.title}</h4>
-                        </div>
-                        <span className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-600 uppercase tracking-widest animate-pulse">
-                          AWAITING DECISION
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <h5 className="text-xs font-bold uppercase text-slate-600">Violation Details</h5>
-                          <p className="text-xs text-slate-500 leading-relaxed bg-sky-50/40 p-3 border border-slate-100 rounded">
-                            {req.finding.description}
-                          </p>
-                          <div className="flex gap-6 text-[10px] text-slate-500 font-semibold">
-                            <span>Compliance Standard: {req.finding.compliance_reference}</span>
-                            <span>Frame Page: {req.finding.page_number}</span>
+                  <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    {agentLogs.length === 0 ? (
+                      <>
+                        {[
+                          { agent: "Agent 3", msg: "Found GDPR mismatch in the documents. Remediating and..." },
+                          { agent: "Agent 1", msg: "Scanning rules... Checking agent documents, matching..." },
+                          { agent: "Agent 7", msg: "Creating patch. Including compliance modifications..." }
+                        ].map((mock, i) => (
+                          <div key={i} className="flex-shrink-0 w-80 p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0"><Cpu className="w-4 h-4 text-indigo-600" /></div>
+                            <p className="text-xs text-slate-700"><span className="font-bold">{mock.agent}:</span> <span className="text-slate-500">{mock.msg}</span></p>
                           </div>
+                        ))}
+                      </>
+                    ) : (
+                      agentLogs.slice(-6).map((log, idx) => (
+                        <div key={idx} className="flex-shrink-0 w-80 p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0"><Cpu className="w-4 h-4 text-indigo-600" /></div>
+                          <p className="text-xs text-slate-700"><span className="font-bold">{log.agent}:</span> <span className="text-slate-500">{log.message}</span></p>
                         </div>
-
-                        {/* Proposal Override details */}
-                        <div className="space-y-3">
-                          <h5 className="text-xs font-bold uppercase text-slate-600">Split-Screen Patches</h5>
-                          <div className="grid grid-cols-2 gap-3 text-xs">
-                            <div className="p-3 bg-red-950/15 border border-red-500/15 rounded flex flex-col justify-between">
-                              <span className="text-[9px] text-red-400/60 font-bold uppercase mb-2">Original Document</span>
-                              <span className="font-mono text-red-300 break-words">{req.finding.original_value}</span>
-                            </div>
-                            <div className="p-3 bg-emerald-950/15 border border-emerald-500/15 rounded flex flex-col justify-between">
-                              <span className="text-[9px] text-emerald-600/60 font-bold uppercase mb-2">AI Proposed Fix</span>
-                              <span className="font-mono text-emerald-300 break-words">{req.finding.proposed_value}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Decision override buttons */}
-                      <div className="pt-4 border-t border-gray-950 flex gap-3 justify-end">
-                        <button
-                          onClick={() => handleDecideHITL(req.id, false, "Manual reject decision override.")}
-                          className="px-4 py-2 border border-red-500/20 bg-red-950/10 hover:bg-red-950/30 text-red-400 rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                          <span>Reject Fix</span>
-                        </button>
-                        <button
-                          onClick={() => handleDecideHITL(req.id, true, "Manual approval decision override.")}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Approve & Apply Patch</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-              {/* Collapsible Optional Compliance Rules Management Module */}
-              <div className="pt-6 border-t border-slate-200">
-                <button 
-                  onClick={() => setShowRulesManager(!showRulesManager)}
-                  className="w-full flex items-center justify-between p-4 premium-card bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-lg font-bold text-slate-800">Compliance Rules Management</h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">Optional</span>
-                  </div>
-                  {showRulesManager ? <X className="w-5 h-5 text-slate-500" /> : <ArrowRight className="w-5 h-5 text-slate-500" />}
-                </button>
-
-                {showRulesManager && (
-                  <div className="mt-4 p-6 premium-card animate-in fade-in slide-in-from-top-4 duration-300">
-                    
-                    {/* Tab Toggles */}
-                    <div className="flex gap-4 mb-6 border-b border-slate-200 pb-4">
-                      <button 
-                        onClick={() => setRulesIngestionMode("automated")}
-                        className={`px-4 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${rulesIngestionMode === "automated" ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"}`}
-                      >
-                        Automated Document Ingestion
-                      </button>
-                      <button 
-                        onClick={() => setRulesIngestionMode("manual")}
-                        className={`px-4 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${rulesIngestionMode === "manual" ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"}`}
-                      >
-                        Manual Ingestion
-                      </button>
-                    </div>
-
-                    {/* Automated Ingestion View */}
-                    {rulesIngestionMode === "automated" && (
-                      <div className="space-y-6">
-                        <div 
-                          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all ${rulesDragActive ? "border-indigo-500 bg-indigo-50" : "border-slate-300 bg-slate-50/50 hover:bg-slate-50"}`}
-                          onDragEnter={() => setRulesDragActive(true)}
-                          onDragLeave={() => setRulesDragActive(false)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            setRulesDragActive(false);
-                            setIsProcessingRules(true);
-                            setTimeout(() => setIsProcessingRules(false), 2000); // Mock processing
-                          }}
-                        >
-                          {isProcessingRules ? (
-                            <div className="flex flex-col items-center gap-3">
-                              <RefreshCw className="w-10 h-10 text-indigo-600 animate-spin" />
-                              <p className="text-sm font-bold text-slate-700">AI processing and vector indexing...</p>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center gap-2">
-                              <UploadCloud className="w-10 h-10 text-slate-400 mb-2" />
-                              <p className="text-sm font-bold text-slate-700">Drag & Drop Corporate Rulebooks</p>
-                              <p className="text-xs text-slate-500">Supports PDF, DOCX, PNG, JPG (Max 50MB)</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Manual Ingestion View */}
-                    {rulesIngestionMode === "manual" && (
-                      <form onSubmit={handleAddRule} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Rule Name</label>
-                            <input type="text" required value={newRuleTitle} onChange={(e) => setNewRuleTitle(e.target.value)} placeholder="e.g. Data Privacy Clause" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Category</label>
-                            <select value={newRuleCategory} onChange={(e) => setNewRuleCategory(e.target.value)} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm">
-                              <option value="Tax">Tax & Finance</option>
-                              <option value="Contract">Contracts & Legal</option>
-                              <option value="Compliance">General Compliance</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Policy Description</label>
-                            <textarea required rows={4} value={newRuleText} onChange={(e) => setNewRuleText(e.target.value)} placeholder="Enter the exact policy text to be indexed..." className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm" />
-                          </div>
-                          <button type="submit" className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-all cursor-pointer shadow-md shadow-indigo-500/20">
-                            Save & Vector Index Rule
-                          </button>
-                        </div>
-                      </form>
-                    )}
-
-                    {/* Active Rules List */}
-                    <div className="mt-8 pt-6 border-t border-slate-200">
-                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider mb-4">Active Indexed Rules</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {complianceRules.length === 0 ? (
-                          <div className="col-span-full text-center py-6 text-sm text-slate-500">No custom rules added yet.</div>
-                        ) : (
-                          complianceRules.map((rule) => (
-                            <div key={rule.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-                              <div className="flex justify-between items-start">
-                                <h5 className="font-bold text-sm text-indigo-700">{rule.title}</h5>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-600 border border-slate-200 uppercase">{rule.category}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{rule.rule_text}</p>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                  </div>
-                )}
               </div>
             </div>
           )}
 
           {/* TAB: OVERVIEW */}
           {activeTab === "overview" && (
-            <div className="space-y-6">
-                          <div className="space-y-6">
-              {/* Headline Welcome Banner */}
-              <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-gradient-to-r from-cyan-950/20 via-transparent to-transparent">
-                <div className="absolute top-0 right-0 w-64 h-full bg-[linear-gradient(to_left,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:16px_16px]" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Welcome to PulseApex Executive Intelligence Center</h3>
-                <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-                  Real-time autonomous auditing is active. The agent network parses uploads, detects compliance discrepancies, and builds security patches. Review highlights below.
-                </p>
-              </div>
-
+            <div className="space-y-6 max-w-[1400px] mx-auto">
               <NativeDashboard token={token} />
-
-              {/* Two Column details: recent docs and system status */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Recent Documents list */}
-                <div className="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-950">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Recent Document Submissions</h4>
-                    <button 
-                      onClick={() => setActiveTab("upload")}
-                      className="text-xs text-sky-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Upload New File
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {documents.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-slate-500">No documents uploaded yet.</div>
-                    ) : (
-                      documents.map((doc) => (
-                        <div key={doc.id} className="p-4 bg-sky-50/45 rounded-xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200">
-                              <FileText className="w-5 h-5 text-slate-600" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-semibold text-slate-700 max-w-[250px] sm:max-w-xs truncate">{doc.filename}</span>
-                              <span className="text-[10px] text-slate-500 uppercase font-bold">{doc.file_type} • {(doc.file_size / 1024).toFixed(1)} KB</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-start">
-                            {/* Document status badge */}
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                              doc.status === "completed" || doc.status === "audited" ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                              doc.status === "paused" ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse' :
-                              doc.status === "parsing" ? 'bg-sky-600/10 text-sky-600 border-cyan-500/20' :
-                              'bg-slate-100 shadow-inner text-slate-600 border-slate-300'
-                            }`}>
-                              {doc.status.toUpperCase()}
-                            </span>
-
-                            {doc.status === "uploaded" && (
-                              <button
-                                onClick={() => handleStartAudit(doc.id)}
-                                className="px-3 py-1.5 bg-cyan-600 hover:bg-sky-600 text-white rounded text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                              >
-                                <Play className="w-3 h-3" />
-                                <span>Audit</span>
-                              </button>
-                            )}
-
-                            {(doc.status === "audited" || doc.status === "completed" || doc.status === "paused") && (
-                              <button
-                                onClick={() => {
-                                  setSelectedDocId(doc.id);
-                                  setActiveTab("workspace");
-                                }}
-                                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 shadow-inner text-slate-700 rounded text-xs font-semibold transition-all cursor-pointer"
-                              >
-                                View Results
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Audit Health Overview panel */}
-                <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider pb-3 border-b border-gray-950">System Security Gauge</h4>
-                    
-                    {/* Visual Radial Gauge simulation */}
-                    <div className="flex flex-col items-center py-6">
-                      <div className="w-36 h-36 rounded-full border-4 border-gray-950 flex items-center justify-center relative shadow-inner bg-sky-50/20">
-                        {/* Glow halo */}
-                        <div className="absolute inset-0 rounded-full border-t-4 border-l-4 border-cyan-500 animate-spin" style={{ animationDuration: '6s' }} />
-                        <div className="flex flex-col items-center">
-                          <span className="text-4xl font-black text-glow-cyan text-sky-600">96.4</span>
-                          <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-1">Health Index</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-600 text-center leading-relaxed">
-                      Operational threshold active. Standard compliance metrics are satisfied. No unhandled critical errors outside HITL scope.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-950 mt-4 flex items-center justify-between text-xs text-slate-500 font-semibold">
-                    <span>Audit Pipeline: ONLINE</span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping" />
-                      <span>NO BACKLOG</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-              <div className="pt-6 border-t border-slate-200">
-                <h3 className="text-xl font-bold text-slate-800 mb-4">Live Agent Intelligence</h3>
-                            <div className="space-y-6 max-w-4xl mx-auto">
-              <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-sky-600" />
-                    <span>Agent Stream Orchestration Hub</span>
-                  </h3>
-                  <p className="text-xs text-slate-600">
-                    Watching collaboration between: Data Collector, Data Quality, Reconciliation, Compliance, Root Cause, and Report Agents.
-                  </p>
-                </div>
-                {agentLogs.length > 0 && (
-                  <button
-                    onClick={clearAgentLogs}
-                    className="px-3 py-1.5 bg-sky-50 border border-slate-100 text-slate-600 hover:text-slate-800 rounded text-xs font-semibold cursor-pointer"
-                  >
-                    Clear Terminal Feed
-                  </button>
-                )}
-              </div>
-
-              {/* Terminal Frame */}
-              <div className="bg-[#020204] border border-gray-950 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Header panel */}
-                <div className="bg-[#07070c] px-4 py-2 flex items-center justify-between border-b border-gray-950 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-500/20" />
-                    <span className="w-3 h-3 rounded-full bg-amber-500/20" />
-                    <span className="w-3 h-3 rounded-full bg-emerald-500/20" />
-                  </div>
-                  <span className="font-mono text-[10px] text-gray-600 uppercase">pulseapex_ai_terminal_log.log</span>
-                </div>
-
-                {/* Log list */}
-                <div className="p-6 h-[400px] overflow-y-auto font-mono text-xs space-y-4">
-                  {agentLogs.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-600 text-center space-y-2">
-                      <Terminal className="w-8 h-8 opacity-40 animate-pulse text-sky-600" />
-                      <span className="text-[10px] tracking-wider uppercase font-semibold">Terminal idle. Trigger an audit to view live stream.</span>
-                    </div>
-                  ) : (
-                    agentLogs.map((log, idx) => (
-                      <div key={idx} className="space-y-1 border-l-2 border-cyan-500/35 pl-3">
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          <span className="font-bold text-sky-600">[{log.agent.toUpperCase()}]</span>
-                          <span>{log.timestamp}</span>
-                        </div>
-                        <p className="text-slate-800">{log.message}</p>
-                        {log.thought && (
-                          <div className="p-2 bg-sky-50/40 border border-gray-950 rounded text-slate-500 text-[10px] italic mt-1">
-                            <span className="font-bold text-blue-600/70 not-italic block uppercase text-[8px] tracking-widest mb-0.5">Agent Internal Thoughts:</span>
-                            {log.thought}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                  <div ref={terminalEndRef} />
-                </div>
-              </div>
-            </div>
-              </div>
             </div>
           )}
         </div>
