@@ -414,6 +414,8 @@ export default function Home() {
     activeAgentIndex = map[latestLog.agent.toLowerCase()] ?? 0;
   }
 
+  const isPipelinePaused = flowStep >= 2 && selectedAudit?.status === 'paused';
+
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#F8F9FA] text-slate-800 font-sans">
       {/* GLOBAL COMMERCIAL HEADER */}
@@ -538,26 +540,48 @@ export default function Home() {
                 
                 {/* Active connecting line fill */}
                 <div 
-                  className="absolute left-0 h-1 bg-indigo-500 top-1/2 -translate-y-1/2 z-0 rounded-full transition-all duration-700 ease-in-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+                  className={`absolute left-0 h-1 top-1/2 -translate-y-1/2 z-0 rounded-full transition-all duration-700 ease-in-out ${isPipelinePaused ? 'bg-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.5)]' : 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]'}`}
                   style={{ width: `${Math.max(0, (activeAgentIndex / (agentsList.length - 1)) * 100)}%` }} 
                 />
 
                 {agentsList.map((agent, index) => {
                   const isCompleted = activeAgentIndex > index;
                   const isActive = activeAgentIndex === index;
-                  const isPending = activeAgentIndex < index;
+                  const isNodePaused = isActive && isPipelinePaused;
                   
                   return (
                     <div key={agent} className="relative z-10 flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
-                        isCompleted ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-50' : 
-                        isActive ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)] ring-4 ring-indigo-50 animate-pulse' : 
-                        'bg-white border-2 border-slate-200 text-slate-300'
-                      }`}>
-                        {isCompleted ? <Check className="w-5 h-5" /> : <Cpu className="w-5 h-5" />}
+                      <div className="relative w-12 h-12 flex items-center justify-center">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="44" fill="white" stroke="#F1F5F9" strokeWidth="8" />
+                          <circle 
+                            cx="50" cy="50" r="44" 
+                            fill="transparent" 
+                            stroke={isNodePaused ? "#B45309" : "#4F46E5"} 
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            strokeDasharray="276.46"
+                            strokeDashoffset={isCompleted || isNodePaused ? "0" : (isActive ? "60" : "276.46")}
+                            className={`transition-all duration-1000 ease-in-out ${isActive && !isNodePaused ? 'animate-[spin_2s_linear_infinite]' : ''}`}
+                            style={{ transformOrigin: '50px 50px' }}
+                          />
+                        </svg>
+
+                        <div className={`relative z-10 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-500 ${
+                          isNodePaused ? 'bg-amber-600 text-white shadow-[0_0_10px_rgba(217,119,6,0.6)]' :
+                          isCompleted ? 'bg-indigo-600 text-white shadow-[0_0_10px_rgba(79,70,229,0.5)]' :
+                          isActive ? 'bg-indigo-600 text-white animate-pulse shadow-[0_0_10px_rgba(79,70,229,0.5)]' :
+                          'bg-slate-200 text-slate-400'
+                        }`}>
+                          {isNodePaused ? <Lock className="w-3 h-3" /> : <Cpu className="w-3 h-3" />}
+                        </div>
                       </div>
-                      <span className={`absolute top-12 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
-                        isActive ? 'text-indigo-600' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
+                      
+                      <span className={`absolute top-16 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors duration-500 ${
+                        isNodePaused ? 'text-amber-700' :
+                        isActive ? 'text-indigo-600' : 
+                        isCompleted ? 'text-indigo-900' : 
+                        'text-slate-400'
                       }`}>
                         {agent}
                       </span>
