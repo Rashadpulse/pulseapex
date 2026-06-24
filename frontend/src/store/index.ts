@@ -66,6 +66,7 @@ interface PulseApexStore {
   setDocuments: (docs: Document[]) => void;
   addDocument: (doc: Document) => void;
   setAudit: (docId: number, audit: Audit) => void;
+  setAgentLogs: (logs: AgentLog[]) => void;
   addAgentLog: (log: AgentLog) => void;
   clearAgentLogs: () => void;
   setActiveTab: (tab: string) => void;
@@ -100,6 +101,7 @@ export const usePulseApexStore = create<PulseApexStore>((set) => ({
   setAudit: (docId, audit) => set((state) => ({
     audits: { ...state.audits, [docId]: audit }
   })),
+  setAgentLogs: (logs) => set({ agentLogs: logs }),
   addAgentLog: (log) => set((state) => ({ agentLogs: [...state.agentLogs, log] })),
   clearAgentLogs: () => set({ agentLogs: [] }),
   setActiveTab: (activeTab) => set({ activeTab }),

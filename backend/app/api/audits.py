@@ -9,7 +9,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload, joinedload
 from app.core.database import AsyncSessionLocal, get_db
 from app.api.deps import get_current_active_user
-from app.models import User, Document, Audit, AuditFinding, AgentRun
+from app.models import User, Document, Audit, AuditFinding, AgentRun, AgentLog
 from app.schemas import AuditResponse, DashboardStats
 from app.agents.crew import PulseApexAuditNetwork
 
@@ -155,6 +155,34 @@ async def get_audit_status(
     if not audit:
         raise HTTPException(status_code=404, detail="Audit job not found")
     return audit
+
+@router.get("/{audit_id}/logs")
+async def get_audit_logs(
+    audit_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    result = await db.execute(
+        select(AgentLog, AgentRun.agent_name)
+        .join(AgentRun, AgentLog.agent_run_id == AgentRun.id)
+        .join(Audit, AgentRun.audit_id == Audit.id)
+        .where(
+            Audit.id == audit_id,
+            Audit.organization_id == current_user.organization_id
+        )
+        .order_by(AgentLog.created_at.asc())
+    )
+    rows = result.all()
+    
+    return [
+        {
+            "agent": agent_name,
+            "message": log.message,
+            "thought": log.agent_thought or "",
+            "timestamp": log.created_at.strftime("%I:%M:%S %p")
+        }
+        for log, agent_name in rows
+    ]
 
 @router.get("/document/{document_id}", response_model=AuditResponse)
 async def get_latest_audit_by_document(

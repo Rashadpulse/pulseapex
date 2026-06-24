@@ -14,7 +14,7 @@ import { API_BASE_URL, WS_BASE_URL } from "../config/api";
 export default function Home() {
   const {
     token, setToken, user, setUser, documents, setDocuments, addDocument,
-    audits, setAudit, agentLogs, addAgentLog, clearAgentLogs, 
+    audits, setAudit, agentLogs, setAgentLogs, addAgentLog, clearAgentLogs, 
     selectedDocId, setSelectedDocId, 
     pendingApprovals, setPendingApprovals, logout
   } = usePulseApexStore();
@@ -55,6 +55,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [activeHitlFinding, setActiveHitlFinding] = useState<any>(null);
+  const [isUploadingRulebook, setIsUploadingRulebook] = useState(false);
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -128,6 +129,24 @@ export default function Home() {
         await fetchAuditForDoc(selectedDocId);
         const state = usePulseApexStore.getState();
         const audit = state.audits[selectedDocId];
+        
+        // Fetch logs manually to ensure pipeline visualization syncs without WebSockets
+        if (audit && audit.id) {
+          try {
+            const logsRes = await fetch(`${API_BASE_URL}/audits/${audit.id}/logs`, {
+              headers: { Authorization: `Bearer ${state.token}` }
+            });
+            if (logsRes.ok) {
+              const logsData = await logsRes.json();
+              if (logsData && logsData.length > state.agentLogs.length) {
+                state.setAgentLogs(logsData);
+              }
+            }
+          } catch (err) {
+            console.error("Failed to poll agent logs", err);
+          }
+        }
+
         if (audit && (audit.status === 'completed' || audit.status === 'failed' || audit.status === 'paused')) {
           setFlowStep(2);
         }
@@ -375,6 +394,47 @@ export default function Home() {
     } catch (e) { console.error(e); }
   };
 
+  const handleRulebookUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (connectionMode === "mock") {
+      setIsUploadingRulebook(true);
+      setTimeout(() => {
+        setIsUploadingRulebook(false);
+        alert(`Sandbox Mode: ${file.name} rulebook ingested successfully.`);
+      }, 1500);
+      return;
+    }
+
+    setIsUploadingRulebook(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${API_BASE_URL}/compliance/upload`, {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        },
+        body: formData
+      });
+      
+      if (res.ok) {
+        alert("Rulebook successfully parsed, ingested, and vectorized into the Compliance Engine.");
+      } else {
+        alert("Failed to ingest rulebook.");
+      }
+    } catch (err) {
+      console.error("Rulebook upload error:", err);
+      alert("Error uploading file. Please ensure the backend is reachable.");
+    } finally {
+      setIsUploadingRulebook(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
   if (!hasMounted) return <div className="p-8 text-center text-slate-500 animate-pulse">Initializing PulseApex...</div>;
 
   if (!token) {
@@ -486,8 +546,18 @@ export default function Home() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input type="text" placeholder="Search active policies (e.g. 'SOC2', 'GDPR')..." className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" />
               </div>
-              <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2 shadow-sm transition-colors">
-                <UploadCloud className="w-4 h-4" /> Upload Rulebook
+              <input id="rulebook-upload-input" type="file" accept=".pdf,.docx,.xlsx,.txt,.md,.csv,.json" className="hidden" onChange={handleRulebookUpload} />
+              <button 
+                onClick={() => document.getElementById('rulebook-upload-input')?.click()}
+                disabled={isUploadingRulebook}
+                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2 shadow-sm transition-colors"
+              >
+                {isUploadingRulebook ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+                ) : (
+                  <UploadCloud className="w-4 h-4" />
+                )}
+                {isUploadingRulebook ? "Ingesting..." : "Upload Rulebook"}
               </button>
             </div>
           )}
