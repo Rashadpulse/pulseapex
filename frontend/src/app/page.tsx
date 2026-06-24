@@ -100,13 +100,11 @@ export default function Home() {
               const targetDocId = Object.keys(state.audits).find(
                 docId => state.audits[Number(docId)]?.id === data.audit_id
               );
-              if (targetDocId) {
-                fetchAuditForDoc(Number(targetDocId));
-                // Auto transition to flowStep 2
-                setFlowStep(2);
-              } else if (state.selectedDocId) {
-                fetchAuditForDoc(state.selectedDocId);
-                setFlowStep(2);
+              const fetchId = targetDocId ? Number(targetDocId) : state.selectedDocId;
+              if (fetchId) {
+                fetchAuditForDoc(fetchId).then(() => {
+                  setFlowStep(2);
+                });
               }
             }
           } catch (e) {
@@ -121,6 +119,24 @@ export default function Home() {
       }
     }
   }, [connectionMode, token]);
+
+  // Polling fallback if WebSockets drop (especially on cloud platforms like Render)
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (connectionMode === "live" && flowStep === 1 && selectedDocId) {
+      interval = setInterval(async () => {
+        await fetchAuditForDoc(selectedDocId);
+        const state = usePulseApexStore.getState();
+        const audit = state.audits[selectedDocId];
+        if (audit && (audit.status === 'completed' || audit.status === 'failed' || audit.status === 'paused')) {
+          setFlowStep(2);
+        }
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [connectionMode, flowStep, selectedDocId]);
 
   const fetchDocuments = async (overrideToken?: string) => {
     if (connectionMode === "mock") return;
@@ -261,8 +277,8 @@ export default function Home() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        const auditData = await res.json();
-        setAudit(docId, auditData);
+        // Fetch the newly created real audit record rather than using the /trigger task info
+        await fetchAuditForDoc(docId);
         clearAgentLogs();
       }
     } catch (e) {
@@ -626,7 +642,7 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {selectedAudit.findings.map(finding => {
+              {(selectedAudit.findings || []).map(finding => {
                 const isHITL = finding.ai_confidence_score && finding.ai_confidence_score < 90 && finding.status === 'unresolved';
                 
                 return (
@@ -684,7 +700,7 @@ export default function Home() {
               })}
             </div>
             
-            {!selectedAudit.findings.some(f => f.ai_confidence_score && f.ai_confidence_score < 90 && f.status === 'unresolved') && (
+            {!((selectedAudit.findings || []).some(f => f.ai_confidence_score && f.ai_confidence_score < 90 && f.status === 'unresolved')) && (
               <div className="mt-8 flex justify-center">
                 <button onClick={() => setFlowStep(0)} className="px-6 py-3 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 shadow-sm transition-colors flex items-center gap-2">
                   <RefreshCw className="w-4 h-4" /> Start New Audit
