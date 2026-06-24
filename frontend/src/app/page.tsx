@@ -54,6 +54,8 @@ export default function Home() {
   const [showRules, setShowRules] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [activeHitlFinding, setActiveHitlFinding] = useState<any>(null);
+
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -223,6 +225,30 @@ export default function Home() {
           timestamp: new Date().toLocaleTimeString()
         });
       }
+      const mockAudit: Audit = {
+        id: 999,
+        document_id: docId,
+        status: 'paused',
+        compliance_score: 88,
+        critical_findings_count: 1,
+        created_at: new Date().toISOString(),
+        findings: [
+          {
+            id: 1001,
+            audit_id: 999,
+            severity: 'critical',
+            category: 'Finance',
+            title: 'Revenue Recognition Mismatch',
+            description: 'The Q3 revenue reported in the ledger does not match the sum of recognized contracts. Requires human verification.',
+            original_value: '$1,200,500',
+            proposed_value: '$1,050,000',
+            status: 'unresolved',
+            compliance_reference: 'ASC 606 / IFRS 15',
+            ai_confidence_score: 85
+          }
+        ]
+      };
+      setAudit(docId, mockAudit);
       setFlowStep(2);
       setSelectedDocId(docId);
       return;
@@ -316,6 +342,7 @@ export default function Home() {
       // Refresh mock state
       alert(`HITL Decision: ${approve ? 'Approved' : 'Rejected'} with notes: ${notes}`);
       setFlowStep(0);
+      setActiveHitlFinding(null);
       return;
     }
     try {
@@ -325,6 +352,7 @@ export default function Home() {
         body: JSON.stringify({ request_id: reqId, approve, notes })
       });
       if (res.ok) {
+        setActiveHitlFinding(null);
         fetchDocuments();
         if (selectedDocId) fetchAuditForDoc(selectedDocId);
       }
@@ -615,36 +643,15 @@ export default function Home() {
                         </a>
                       </div>
 
-                      {/* HITL INLINE FORM */}
+                      {/* HITL BUTTON */}
                       {isHITL && (
-                        <div className="mt-4 pt-4 border-t border-amber-100">
-                          <label className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block mb-2">Auditor Override Notes</label>
-                          <textarea 
-                            className="w-full p-3 bg-amber-50/50 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-slate-700"
-                            rows={2}
-                            placeholder="Provide rationale for approval/rejection..."
-                            id={`notes-${finding.id}`}
-                          />
-                          <div className="flex gap-2 mt-3">
-                            <button 
-                              onClick={() => {
-                                const notes = (document.getElementById(`notes-${finding.id}`) as HTMLTextAreaElement)?.value;
-                                handleDecideHITL(finding.id, true, notes);
-                              }}
-                              className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
-                            >
-                              Approve Remedy
-                            </button>
-                            <button 
-                              onClick={() => {
-                                const notes = (document.getElementById(`notes-${finding.id}`) as HTMLTextAreaElement)?.value;
-                                handleDecideHITL(finding.id, false, notes);
-                              }}
-                              className="flex-1 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold shadow-sm transition-colors"
-                            >
-                              Reject & Flag
-                            </button>
-                          </div>
+                        <div className="mt-4 pt-4 border-t border-amber-100 flex justify-end">
+                          <button 
+                            onClick={() => setActiveHitlFinding(finding)}
+                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-md shadow-amber-500/20 transition-colors flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" /> Review HITL Request
+                          </button>
                         </div>
                       )}
                     </div>
@@ -663,6 +670,72 @@ export default function Home() {
           </section>
         )}
       </main>
+
+      {/* HITL MODAL OVERLAY */}
+      {activeHitlFinding && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="bg-amber-500 p-6 flex justify-between items-center text-white">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-6 h-6 animate-pulse" />
+                <h3 className="font-bold text-lg">Human Review Required</h3>
+              </div>
+              <button onClick={() => setActiveHitlFinding(null)} className="p-1 hover:bg-amber-600 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div>
+                <h4 className="text-base font-bold text-slate-800">{activeHitlFinding.title}</h4>
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">{activeHitlFinding.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Detected Anomaly</span>
+                  <span className="text-sm font-mono text-rose-600 bg-rose-50 px-2 py-1 rounded-md border border-rose-100 break-words block">{activeHitlFinding.original_value}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Agent Proposal</span>
+                  <span className="text-sm font-mono text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 break-words block">{activeHitlFinding.proposed_value}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">Auditor Override Notes</label>
+                <textarea 
+                  className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-slate-700 shadow-inner"
+                  rows={3}
+                  placeholder="Provide rationale for approval/rejection..."
+                  id="modal-hitl-notes"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button 
+                onClick={() => {
+                  const notes = (document.getElementById('modal-hitl-notes') as HTMLTextAreaElement)?.value;
+                  handleDecideHITL(activeHitlFinding.id, false, notes);
+                }}
+                className="flex-1 py-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-bold shadow-sm transition-colors"
+              >
+                Reject & Flag
+              </button>
+              <button 
+                onClick={() => {
+                  const notes = (document.getElementById('modal-hitl-notes') as HTMLTextAreaElement)?.value;
+                  handleDecideHITL(activeHitlFinding.id, true, notes);
+                }}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-500/25 transition-colors"
+              >
+                Approve Remedy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
