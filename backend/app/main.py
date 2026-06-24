@@ -126,3 +126,13 @@ def read_root():
         "service": settings.PROJECT_NAME,
         "message": "PulseApex Audit Network Backend is operational."
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    
+    # Render provides the port dynamically via the PORT environment variable
+    # Fall back to 8000 for local development if PORT is not set
+    port = int(os.environ.get("PORT", 8000))
+    
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
