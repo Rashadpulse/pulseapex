@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "PulseApex Audit Network"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "super-secret-aegis-ai-cryptographic-security-key-change-in-production"
+    ADMIN_PASSWORD: str = "secret-admin-pass"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
     # Databases

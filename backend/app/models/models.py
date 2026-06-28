@@ -22,6 +22,7 @@ class Organization(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, unique=True)
     slug = Column(String(255), nullable=False, unique=True)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -83,6 +84,7 @@ class Document(Base):
     file_size = Column(Integer, nullable=False)  # in bytes
     storage_path = Column(String(555), nullable=False)
     status = Column(String(50), default="uploaded")  # uploaded, parsing, audited, failed
+    priority = Column(Integer, default=0)
     organization_id = Column(Integer, ForeignKey("organizations.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -328,3 +330,12 @@ class HumanCorrectionVector(Base):
     __table_args__ = (
         Index("idx_human_corrections_embedding", "embedding", postgresql_using="hnsw", postgresql_with={"m": 16, "ef_construction": 64}, postgresql_ops={"embedding": "vector_cosine_ops"}),
     )
+
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+
+    id = Column(Integer, primary_key=True, index=True)
+    config_key = Column(String(255), unique=True, nullable=False)
+    config_value = Column(String(1000), nullable=False)
+    description = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

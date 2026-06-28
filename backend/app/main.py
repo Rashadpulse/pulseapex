@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine
 from app.models.base import Base
-from app.api import auth, documents, audits, hitl, compliance, powerbi, internal
+from app.api import auth, documents, audits, hitl, compliance, powerbi, internal, admin
 from app.websockets import router as ws_router
 
 @asynccontextmanager
@@ -42,6 +42,8 @@ async def lifespan(app: FastAPI):
             try:
                 # Ensure missing columns exist in older database tables (Render deployments)
                 await conn.execute(text("ALTER TABLE audit_findings ADD COLUMN IF NOT EXISTS ai_confidence_score FLOAT;"))
+                await conn.execute(text("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;"))
+                await conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0;"))
                 
                 # Phase 4: Create Materialized Views for Power BI REST API Integration
                 await conn.execute(text("""
@@ -117,6 +119,7 @@ app.include_router(hitl.router, prefix=f"{settings.API_V1_STR}/hitl", tags=["Hum
 app.include_router(compliance.router, prefix=f"{settings.API_V1_STR}/compliance", tags=["Compliance Policies"])
 app.include_router(powerbi.router, prefix=f"{settings.API_V1_STR}/powerbi", tags=["Power BI Export"])
 app.include_router(internal.router, prefix=f"{settings.API_V1_STR}/internal", tags=["Internal Cron"])
+app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin Portal"])
 app.include_router(ws_router, tags=["WebSockets"])
 
 @app.get("/")
