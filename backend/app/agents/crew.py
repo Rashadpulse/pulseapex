@@ -552,7 +552,7 @@ class PulseApexAuditNetwork:
                 backstory='You are a data ingestion specialist responsible for turning unstructured corporate documents and data streams into a clean, unified structure.',
                 verbose=False,
                 allow_delegation=False,
-                llm=get_openrouter_llm("google/gemma-4-31b-it:free")
+                llm=get_openrouter_llm("meta-llama/llama-3-8b-instruct:free")
             )
 
             collector_task = Task(
